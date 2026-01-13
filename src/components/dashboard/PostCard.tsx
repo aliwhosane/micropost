@@ -129,7 +129,9 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     const handleSchedule = async () => {
         if (!scheduleDate) return;
         setActionStatus("SCHEDULING");
-        await approvePost(id, scheduleDate); // Pass the date string
+        // Convert local time to UTC ISO string to preserve the correct instant
+        const isoDate = new Date(scheduleDate).toISOString();
+        await approvePost(id, isoDate);
         setActionStatus("IDLE");
         setIsScheduling(false);
     }
