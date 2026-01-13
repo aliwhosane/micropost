@@ -28,6 +28,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     // Selection State
     const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
     const [instruction, setInstruction] = useState("");
+    const cardRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const schedulePopoverRef = useRef<HTMLDivElement>(null);
@@ -47,34 +48,45 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         }
     }, [isEditing]);
 
-    const handleTextSelection = () => {
-        if (isEditing) return;
-        const sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return;
+    // Handle selection changes globally to catch drags ending outside the div
+    useEffect(() => {
+        const handleDocumentMouseUp = () => {
+            if (isEditing) return;
+            // Ensure cardRef is available
+            if (!cardRef.current) return;
 
-        const text = sel.toString().trim();
-        if (!text) {
-            setSelection(null);
-            return;
-        }
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+                // Don't clear immediately on mouseup if interacting with popover?
+                // Actually relying on click-outside for clearing is better.
+                // But valid selection logic needs to run here.
+                return;
+            }
 
-        // Ideally check if selection is inside contentRef
-        if (contentRef.current && !contentRef.current.contains(sel.anchorNode)) {
-            setSelection(null);
-            return;
-        }
+            const text = sel.toString().trim();
+            if (!text) return;
 
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
+            // Verify selection is within our content
+            if (contentRef.current &&
+                contentRef.current.contains(sel.anchorNode) &&
+                contentRef.current.contains(sel.focusNode)) {
 
-        // Calculate relative position if needed or use fixed/absolute from body
-        // For simplicity using fixed scrolling coordinates
-        setSelection({
-            text,
-            top: rect.bottom + window.scrollY + 10,
-            left: rect.left + window.scrollX,
-        });
-    };
+                const range = sel.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                const cardRect = cardRef.current.getBoundingClientRect();
+
+                setSelection({
+                    text,
+                    // Calculate position relative to the card container
+                    top: rect.bottom - cardRect.top + 10,
+                    left: rect.left - cardRect.left,
+                });
+            }
+        };
+
+        document.addEventListener("mouseup", handleDocumentMouseUp);
+        return () => document.removeEventListener("mouseup", handleDocumentMouseUp);
+    }, [isEditing]);
 
     const handleRegenerate = async () => {
         if (!selection || !instruction.trim()) return;
@@ -145,12 +157,12 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     const platformColor = platform === "LINKEDIN" ? "text-[#0077b5]" : "text-[#1DA1F2]";
 
     return (
-        <div className="relative flex flex-col p-5 rounded-xl bg-surface-variant/20 border border-outline-variant/20 gap-4 hover:border-outline-variant/40 transition-colors">
+        <div ref={cardRef} className="relative flex flex-col p-5 rounded-xl bg-surface-variant/20 border border-outline-variant/20 gap-4 hover:border-outline-variant/40 transition-colors">
 
             {/* Selection Popover */}
             {selection && (
                 <div
-                    className="selection-popover fixed z-50 bg-surface shadow-xl rounded-lg p-3 border border-outline-variant w-72 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200"
+                    className="selection-popover absolute z-50 bg-surface shadow-xl rounded-lg p-3 border border-outline-variant w-72 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200"
                     style={{ top: selection.top, left: selection.left }}
                 >
                     <div className="text-xs font-semibold text-on-surface-variant flex justify-between">
@@ -219,7 +231,6 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                 ) : (
                     <div
                         ref={contentRef}
-                        onMouseUp={handleTextSelection}
                         className="font-medium text-on-surface whitespace-pre-wrap text-[15px] leading-7 cursor-text p-1"
                     >
                         {selection ? (
@@ -253,14 +264,58 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                                 <Button size="sm" variant="text" onClick={() => setIsScheduling(false)} className="h-6 w-6 p-0 text-on-surface-variant"><X className="h-3 w-3" /></Button>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs text-on-surface-variant font-medium ml-1">Date & Time</label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full p-2 rounded-lg bg-surface-variant/30 border border-outline-variant text-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                                    value={scheduleDate}
-                                    onChange={(e) => setScheduleDate(e.target.value)}
-                                />
+                            <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs text-on-surface-variant font-medium ml-1">Date</label>
+                                    <input
+                                        type="date"
+                                        className="w-full p-2.5 rounded-lg bg-surface-variant/30 border border-outline-variant text-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                        value={scheduleDate.split("T")[0]}
+                                        min={new Date().toLocaleDateString('en-CA')} // 'en-CA' gives YYYY-MM-DD in local time
+                                        onChange={(e) => {
+                                            // Preserve existing time if set, or default to 09:00
+                                            const current = scheduleDate ? new Date(scheduleDate) : new Date();
+                                            current.setHours(9, 0, 0, 0); // Default 9 AM
+
+                                            // Set new date parts from input
+                                            const [y, m, d] = e.target.value.split('-').map(Number);
+                                            current.setFullYear(y, m - 1, d);
+
+                                            // Use local string format compatible with datetime-local logic for consistency or state
+                                            // Actually, let's keep scheduleDate as a full ISO string or Date object in state?
+                                            // For simplicity, let's store as a string YYYY-MM-DDTHH:mm
+
+                                            const timePart = scheduleDate.includes("T") ? scheduleDate.split("T")[1] : "09:00";
+                                            setScheduleDate(`${e.target.value}T${timePart}`);
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs text-on-surface-variant font-medium ml-1">Time</label>
+                                    <select
+                                        className="w-full p-2.5 rounded-lg bg-surface-variant/30 border border-outline-variant text-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                                        value={scheduleDate.split("T")[1] || "09:00"}
+                                        onChange={(e) => {
+                                            const datePart = scheduleDate.split("T")[0] || new Date().toISOString().split("T")[0];
+                                            setScheduleDate(`${datePart}T${e.target.value}`);
+                                        }}
+                                    >
+                                        <option value="" disabled>Select time</option>
+                                        {Array.from({ length: 48 }).map((_, i) => {
+                                            const hour = Math.floor(i / 2);
+                                            const minute = (i % 2) * 30;
+                                            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+                                            // Format for display (e.g. 9:00 AM)
+                                            const date = new Date();
+                                            date.setHours(hour, minute);
+                                            const display = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+                                            return <option key={timeString} value={timeString}>{display}</option>
+                                        })}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="flex gap-2 mt-2">
@@ -270,7 +325,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                                     variant="filled"
                                     className="flex-1 bg-primary text-on-primary"
                                     onClick={handleSchedule}
-                                    disabled={!scheduleDate}
+                                    disabled={!scheduleDate || !scheduleDate.includes("T")}
                                     isLoading={actionStatus === "SCHEDULING"}
                                 >
                                     Confirm
