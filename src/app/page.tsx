@@ -16,10 +16,17 @@ import {
   XCircle,
   TrendingUp,
   ShieldCheck,
-  Check
+  Check,
+  Eye,
+  Target,
+  Youtube,
+  User,
+  Send
 } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { useRef } from "react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 export default function Home() {
   const targetRef = useRef<HTMLDivElement>(null);
@@ -49,19 +56,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
       {/* Navbar */}
-      <header className="px-6 h-16 flex items-center justify-between border-b border-outline-variant/20 backdrop-blur-xl sticky top-0 z-50 bg-background/80">
-        <div className="flex items-center gap-2">
-          <BrandLogo size="lg" />
-        </div>
-        <div className="flex gap-4 items-center">
-          <Link href="/login" className="hidden md:block">
-            <Button variant="text" size="sm">Log in</Button>
-          </Link>
-          <Link href="/login">
-            <Button size="sm" className="rounded-full">Get Started</Button>
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1 overflow-x-hidden">
         {/* H E R O   S E C T I O N */}
@@ -243,6 +238,173 @@ export default function Home() {
           </motion.div>
         </section>
 
+        {/* F R E E   T O O L S */}
+        <section className="py-24 px-6 bg-surface-variant/20">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl font-bold text-on-surface">Free Tools for Creators</h2>
+              <p className="text-on-surface-variant max-w-xl mx-auto">
+                Don't just take our word for it. Try these free utilities to boost your social game immediately.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {/* Tool 1: LinkedIn Previewer */}
+              <Link href="/tools/linkedin-previewer">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                    <Eye className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">LinkedIn Previewer</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    See exactly where your post gets cut off. Optimize your hook before you hit publish.
+                  </p>
+                  <div className="flex items-center text-primary font-medium text-sm mt-auto">
+                    Try it free <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+
+              {/* Tool 2: Professional Translator */}
+              <Link href="/tools/professional-translator">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-4 group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Professional Translator</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Turn your raw thoughts into office-safe corporate speak. Powered by AI.
+                  </p>
+                  <div className="flex items-center text-secondary font-medium text-sm mt-auto">
+                    Translate Text <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+
+              {/* Tool 3: Content Pillar Generator */}
+              <Link href="/tools/content-pillar-generator">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-tertiary/10 rounded-xl flex items-center justify-center text-tertiary mb-4 group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+                    <Target className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Content Pillar Generator</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Get 5 unique content pillars and topic ideas for any niche in seconds.
+                  </p>
+                  <div className="flex items-center text-tertiary font-medium text-sm mt-auto">
+                    Generate Pillars <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+
+              {/* Tool 4: YouTube Summarizer */}
+              <Link href="/tools/youtube-summarizer">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-red-500/10 rounded-xl flex items-center justify-center text-red-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Youtube className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">YouTube to Thread</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Turn long videos into viral Twitter threads. Paste a URL, get a thread.
+                  </p>
+                  <div className="flex items-center text-red-600 font-medium text-sm mt-auto">
+                    Summarize Video <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+              {/* Tool 5: Viral Hook Generator */}
+              <Link href="/tools/viral-hooks">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Viral Hook Generator</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Stop the scroll. Generate 10+ psychologically triggered hooks for any topic.
+                  </p>
+                  <div className="flex items-center text-purple-600 font-medium text-sm mt-auto">
+                    Generate Hooks <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+              <Link href="/tools/bio-optimizer">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                    <User className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">AI Bio Optimizer</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Craft the perfect social media bio for Twitter, LinkedIn, and Instagram.
+                  </p>
+                  <div className="flex items-center text-blue-600 font-medium text-sm mt-auto">
+                    Optimize Bio <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+              <Link href="/tools/buzzword-killer">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Buzzword Killer</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Identify toxic corporate jargon and replace it with punchy, human alternatives.
+                  </p>
+                  <div className="flex items-center text-yellow-600 font-medium text-sm mt-auto">
+                    Kill Jargon <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+              <Link href="/tools/cold-dm-writer">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-md transition-all cursor-pointer group h-full"
+                >
+                  <div className="h-12 w-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Send className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Cold DM Writer</h3>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    Generate 3 high-response cold outreach scripts to pitch your services.
+                  </p>
+                  <div className="flex items-center text-indigo-600 font-medium text-sm mt-auto">
+                    Write DM <ArrowRight className="ml-1 h-4 w-4" />
+                  </div>
+                </motion.div>
+              </Link>
+            </div>
+
+            <div className="text-center mt-12">
+              <Link href="/tools">
+                <Button variant="outlined" size="lg" className="rounded-full">
+                  View All Free Tools
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* P R I C I N G */}
         <section className="py-24 px-6 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-secondary/5 blur-[100px] rounded-full -z-10" />
@@ -374,20 +536,7 @@ export default function Home() {
 
       </main>
 
-      <footer className="py-12 px-6 border-t border-outline-variant/20 bg-surface">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <BrandLogo size="md" />
-            <span className="text-sm text-on-surface-variant">© 2026</span>
-          </div>
-          <div className="flex gap-8 text-sm text-on-surface-variant cursor-pointer">
-            <span className="hover:text-primary transition-colors">Privacy</span>
-            <span className="hover:text-primary transition-colors">Terms</span>
-            <span className="hover:text-primary transition-colors">Twitter</span>
-            <span className="hover:text-primary transition-colors">Support</span>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
