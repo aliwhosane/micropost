@@ -70,6 +70,7 @@ export default async function DashboardPage() {
                                     topic={post.topic || "General"}
                                     createdAt={post.createdAt}
                                     status={post.status}
+                                    scheduledFor={post.scheduledFor}
                                 />
                             ))}
                             {pendingPosts.length === 0 && (

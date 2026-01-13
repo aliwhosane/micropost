@@ -111,7 +111,7 @@ export async function updatePreferences(formData: FormData) {
 
 import { publishToSocials } from "@/lib/social";
 
-export async function approvePost(postId: string) {
+export async function approvePost(postId: string, scheduledAt?: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
@@ -121,6 +121,19 @@ export async function approvePost(postId: string) {
     });
 
     if (!post) throw new Error("Post not found");
+
+    // If scheduledAt is provided, just mark as APPROVED and set time
+    if (scheduledAt) {
+        await prisma.post.update({
+            where: { id: postId },
+            data: {
+                status: "APPROVED",
+                scheduledFor: new Date(scheduledAt)
+            }
+        });
+        revalidatePath("/dashboard");
+        return;
+    }
 
     // Update status to APPROVED locally first (or keep as PENDING until published?)
     // Let's mark as APPROVED, then try to publish.

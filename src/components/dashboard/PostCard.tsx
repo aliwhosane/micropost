@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { approvePost, rejectPost, updatePostContent, regeneratePostAction } from "@/lib/actions";
-import { Check, X, Linkedin, Twitter, Pencil, Sparkles } from "lucide-react";
+import { Check, X, Linkedin, Twitter, Pencil, Sparkles, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface PostCardProps {
@@ -13,18 +13,24 @@ interface PostCardProps {
     topic: string;
     createdAt: Date;
     status: string;
+    scheduledFor?: Date | null;
 }
 
-export function PostCard({ id, content, platform, topic, createdAt, status: initialStatus }: PostCardProps) {
-    const [actionStatus, setActionStatus] = useState<"IDLE" | "APPROVING" | "REJECTING" | "SAVING" | "REGENERATING">("IDLE");
+export function PostCard({ id, content, platform, topic, createdAt, status: initialStatus, scheduledFor }: PostCardProps) {
+    const [actionStatus, setActionStatus] = useState<"IDLE" | "APPROVING" | "REJECTING" | "SAVING" | "REGENERATING" | "SCHEDULING">("IDLE");
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
+
+    // Scheduling State
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [scheduleDate, setScheduleDate] = useState("");
 
     // Selection State
     const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
     const [instruction, setInstruction] = useState("");
     const contentRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const schedulePopoverRef = useRef<HTMLDivElement>(null);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -89,10 +95,13 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             if (selection && !(e.target as HTMLElement).closest(".selection-popover")) {
                 setSelection(null);
             }
+            if (isScheduling && schedulePopoverRef.current && !schedulePopoverRef.current.contains(e.target as Node)) {
+                setIsScheduling(false);
+            }
         };
         window.addEventListener("mousedown", handleClickOutside);
         return () => window.removeEventListener("mousedown", handleClickOutside);
-    }, [selection]);
+    }, [selection, isScheduling]);
 
     const handleApprove = async () => {
         setActionStatus("APPROVING");
@@ -116,6 +125,14 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         setActionStatus("IDLE");
         setIsEditing(false);
     };
+
+    const handleSchedule = async () => {
+        if (!scheduleDate) return;
+        setActionStatus("SCHEDULING");
+        await approvePost(id, scheduleDate); // Pass the date string
+        setActionStatus("IDLE");
+        setIsScheduling(false);
+    }
 
     const handleCancel = () => {
         setEditedContent(content);
@@ -175,6 +192,12 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                     {initialStatus === "FAILED" && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">FAILED</span>
                     )}
+                    {(initialStatus === "APPROVED" && scheduledFor) && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            <Clock className="w-3 h-3" />
+                            SCHEDULED
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -217,7 +240,45 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             </div>
 
             {/* Footer: Actions */}
-            <div className="flex items-center justify-end pt-2 border-t border-outline-variant/10">
+            <div className="flex items-center justify-end pt-2 border-t border-outline-variant/10 relative">
+
+                {/* Scheduling Popover */}
+                {isScheduling && (
+                    <div ref={schedulePopoverRef} className="absolute bottom-full right-0 mb-2 z-20 w-72 bg-surface rounded-xl shadow-2xl border border-outline-variant p-4 animate-in fade-in zoom-in-95 slide-in-from-bottom-2">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold text-on-surface">Schedule Post</h4>
+                                <Button size="sm" variant="text" onClick={() => setIsScheduling(false)} className="h-6 w-6 p-0 text-on-surface-variant"><X className="h-3 w-3" /></Button>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs text-on-surface-variant font-medium ml-1">Date & Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full p-2 rounded-lg bg-surface-variant/30 border border-outline-variant text-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                    value={scheduleDate}
+                                    onChange={(e) => setScheduleDate(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 mt-2">
+                                <Button size="sm" variant="outlined" className="flex-1 border-outline-variant hover:bg-surface-variant" onClick={() => setIsScheduling(false)}>Cancel</Button>
+                                <Button
+                                    size="sm"
+                                    variant="filled"
+                                    className="flex-1 bg-primary text-on-primary"
+                                    onClick={handleSchedule}
+                                    disabled={!scheduleDate}
+                                    isLoading={actionStatus === "SCHEDULING"}
+                                >
+                                    Confirm
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
                 {(initialStatus === "PENDING" || initialStatus === "DRAFT") ? (
                     <>
                         {isEditing ? (
@@ -264,22 +325,36 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                                     <X className="h-3.5 w-3.5" />
                                     <span>Reject</span>
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    variant="filled"
-                                    className="bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200/50 shadow-sm min-w-[90px] border-transparent text-white"
-                                    onClick={handleApprove}
-                                    isLoading={actionStatus === "APPROVING"}
-                                >
-                                    <Check className="h-3.5 w-3.5" />
-                                    <span>Approve</span>
-                                </Button>
+                                <div className="flex items-center rounded-lg bg-emerald-600 p-[1px] hover:bg-emerald-700 hover:shadow-emerald-200/50 shadow-sm transition-all group">
+                                    <button
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-l-md hover:bg-black/10 transition-colors border-r border-emerald-500 disabled:opacity-70"
+                                        onClick={handleApprove}
+                                        disabled={actionStatus === "APPROVING"}
+                                    >
+                                        <Check className="h-3.5 w-3.5" />
+                                        <span>Approve</span>
+                                    </button>
+                                    <button
+                                        className="px-2 py-1.5 rounded-r-md text-emerald-100 hover:text-white hover:bg-black/10 transition-colors"
+                                        onClick={() => setIsScheduling(!isScheduling)}
+                                        title="Schedule for later"
+                                    >
+                                        <CalendarIcon className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="text-sm font-medium text-on-surface-variant/50 italic px-2">
-                        {initialStatus === "PUBLISHED" ? "Posted" : initialStatus}
+                    <div className="flex items-center gap-2">
+                        {scheduledFor && initialStatus === "APPROVED" && (
+                            <span className="text-xs text-on-surface-variant mr-auto bg-surface-variant/50 px-2 py-1 rounded">
+                                Scheduled: {new Date(scheduledFor).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                            </span>
+                        )}
+                        <div className="text-sm font-medium text-on-surface-variant/50 italic px-2">
+                            {initialStatus === "PUBLISHED" ? "Posted" : initialStatus}
+                        </div>
                     </div>
                 )}
             </div>
