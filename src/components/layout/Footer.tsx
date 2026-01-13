@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export function Footer() {
@@ -8,11 +9,11 @@ export function Footer() {
                     <BrandLogo size="md" />
                     <span className="text-sm text-on-surface-variant">© 2026</span>
                 </div>
-                <div className="flex gap-8 text-sm text-on-surface-variant cursor-pointer">
-                    <span className="hover:text-primary transition-colors">Privacy</span>
-                    <span className="hover:text-primary transition-colors">Terms</span>
-                    <span className="hover:text-primary transition-colors">Twitter</span>
-                    <span className="hover:text-primary transition-colors">Support</span>
+                <div className="flex gap-8 text-sm text-on-surface-variant">
+                    <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+                    <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
+                    <a href="https://twitter.com/micropostai" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Twitter</a>
+                    <a href="mailto:support@micropost.ai" className="hover:text-primary transition-colors">Support</a>
                 </div>
             </div>
         </footer>

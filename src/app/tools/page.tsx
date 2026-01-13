@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Zap, Send, Heart, Maximize2, Layers, Magnet, UserCog, Eraser, Wand2, Languages, MessageCircle } from "lucide-react";
+import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Zap, Send, Heart, Maximize2, Layers, Magnet, UserCog, Eraser, Wand2, Languages, MessageCircle, Image as ImageIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -241,7 +241,25 @@ export default function ToolsPage() {
                         </CardContent>
                     </Card>
                 </Link>
-
+                <Link href="/tools/youtube-thumbnail-title" className="block group">
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-red-600/50 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <CardHeader>
+                            <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <ImageIcon className="w-6 h-6 text-red-600" />
+                            </div>
+                            <CardTitle className="flex items-center gap-2">
+                                Thumbnail Text
+                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-red-600" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-on-surface-variant">
+                                Get more clicks. Generate short, punchy text overlays for your video thumbnails.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );

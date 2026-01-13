@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export async function createCheckout(productId: string) {
     const session = await auth();
     if (!session?.user?.email) {
-        throw new Error("Unauthorized");
+        redirect(`/login?callbackUrl=/pricing`);
     }
 
     const result = await polar.checkouts.create({

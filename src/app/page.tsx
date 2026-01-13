@@ -30,7 +30,8 @@ import {
   Layers,
   UserCog,
   Eraser,
-  MessageCircle
+  MessageCircle,
+  Image as ImageIcon
 } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { useRef } from "react";
@@ -82,7 +83,7 @@ export default function Home() {
           >
             <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-variant/50 border border-outline-variant/30 text-on-surface-variant text-sm font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span>v2.5 is live: Smarter, Faster, More Human.</span>
+              <span>v2.21 is live: Smarter, Faster, More Human.</span>
             </motion.div>
 
             <motion.h1
@@ -483,6 +484,26 @@ export default function Home() {
                   </p>
                   <div className="flex items-center text-green-600 font-medium text-sm mt-auto group-hover:underline decoration-2 underline-offset-4">
                     Generate Reply <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </motion.div>
+              </Link>
+              <Link href="/tools/youtube-thumbnail-title">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-xl hover:shadow-red-600/10 transition-all cursor-pointer group h-full relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <ImageIcon className="h-24 w-24 -mr-8 -mt-8 text-red-600" />
+                  </div>
+                  <div className="h-14 w-14 bg-gradient-to-br from-red-600/20 to-red-600/5 border border-red-600/20 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-red-600/10">
+                    <ImageIcon className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Thumbnail Text</h3>
+                  <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">
+                    Get more clicks. Generate short, punchy text overlays for your video thumbnails.
+                  </p>
+                  <div className="flex items-center text-red-600 font-medium text-sm mt-auto group-hover:underline decoration-2 underline-offset-4">
+                    Generate Text <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </motion.div>
               </Link>
