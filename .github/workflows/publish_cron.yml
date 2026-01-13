@@ -2,15 +2,31 @@ name: Publish Scheduled Posts
 
 on:
   schedule:
-    # Run every 10 minutes
     - cron: '*/10 * * * *'
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
       - name: Call Publish Endpoint
+        env:
+          # Check both Variables (Vars) and Secrets
+          URL_VAR: ${{ vars.APP_URL }}
+          URL_SECRET: ${{ secrets.APP_URL }}
         run: |
-          curl -X GET ${{ vars.APP_URL }}/api/cron/publish-scheduled
-        continue-on-error: true
+          # Use Variable if set, otherwise fallback to Secret
+          TARGET_URL="${URL_VAR:-$URL_SECRET}"
+          
+          if [ -z "$TARGET_URL" ]; then
+            echo "::error::APP_URL is missing! Please add 'APP_URL' to Settings -> Secrets and variables -> Actions (as either a Variable or Secret)."
+            exit 1
+          fi
+          
+          echo "Triggering: $TARGET_URL/api/cron/publish-scheduled"
+          
+          # Curl flags:
+          # -f: Fail silently (server-side) on HTTP errors (so script exits non-zero)
+          # -v: Verbose (to see if DNS/Connection works)
+          # -L: Follow redirects (important for Vercel/Next.js)
+          curl -f -v -L "$TARGET_URL/api/cron/publish-scheduled"
