@@ -1,0 +1,78 @@
+import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { prisma } from "@/lib/db";
+
+export async function POST(req: Request) {
+    const WEBHOOK_SECRET = process.env.POLAR_WEBHOOK_SECRET;
+
+    if (!WEBHOOK_SECRET) {
+        return new Response("Please add POLAR_WEBHOOK_SECRET from Polar Dashboard to .env", {
+            status: 400,
+        });
+    }
+
+    const headerPayload = await headers();
+    const svix_id = headerPayload.get("webhook-id");
+    const svix_timestamp = headerPayload.get("webhook-timestamp");
+    const svix_signature = headerPayload.get("webhook-signature");
+
+    if (!svix_id || !svix_timestamp || !svix_signature) {
+        return new Response("Error occured -- no svix headers", {
+            status: 400,
+        });
+    }
+
+    const payload = await req.json();
+    const body = JSON.stringify(payload);
+
+    const wh = new Webhook(WEBHOOK_SECRET);
+    let evt: any;
+
+    try {
+        evt = wh.verify(body, {
+            "webhook-id": svix_id,
+            "webhook-timestamp": svix_timestamp,
+            "webhook-signature": svix_signature,
+        });
+    } catch (err) {
+        return new Response("Error occured", {
+            status: 400,
+        });
+    }
+
+    const eventType = evt.type;
+
+    if (eventType === "subscription.created" || eventType === "subscription.updated") {
+        const subscription = evt.data;
+        const email = subscription.user.email; // Verify where email is located in payload
+        // If email is not directly on user, we might need to fetch user or rely on customer_id
+
+        // Check if we have a user with this email
+        // Note: Polar payload structure: data: { user: { email: ... }, ... } or similar.
+        // We should safely access it.
+
+        if (email) {
+            await prisma.user.update({
+                where: { email },
+                data: {
+                    polarSubscriptionId: subscription.id,
+                    polarCustomerId: subscription.user_id || subscription.customer_id, // Adjust based on actual payload
+                    subscriptionStatus: subscription.status,
+                    subscriptionPlanId: subscription.product_id,
+                }
+            });
+        }
+    }
+
+    if (eventType === "subscription.revoked" || eventType === "subscription.canceled") {
+        const subscription = evt.data;
+        await prisma.user.updateMany({ // Use updateMany in case ID is not exact or to avoid error if not found
+            where: { polarSubscriptionId: subscription.id },
+            data: {
+                subscriptionStatus: 'canceled'
+            }
+        });
+    }
+
+    return new Response("", { status: 200 });
+}

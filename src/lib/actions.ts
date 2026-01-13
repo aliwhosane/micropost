@@ -2,9 +2,13 @@
 
 import { runDailyGeneration } from "@/lib/workflow";
 
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+
+export async function signOutAction() {
+    await signOut({ redirectTo: "/" });
+}
 
 export async function addTopic(formData: FormData) {
     const session = await auth();
@@ -184,6 +188,30 @@ export async function updatePostContent(postId: string, newContent: string) {
     // The previous code didn't strictly link post to user in the query inside action, 
     // but let's assume valid access for now or check against user's posts if relation exists.
     // The dashboard query filters by session.user.email -> user -> posts.
+
+    await prisma.post.update({
+        where: { id: postId },
+        data: { content: newContent }
+    });
+
+    revalidatePath("/dashboard");
+}
+
+import { regeneratePostContent } from "@/lib/ai";
+
+export async function regeneratePostAction(postId: string, selectedText: string, instruction: string) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new Error("Post not found");
+
+    const newContent = await regeneratePostContent(
+        post.content,
+        selectedText,
+        instruction,
+        post.platform || "TWITTER"
+    );
 
     await prisma.post.update({
         where: { id: postId },

@@ -53,7 +53,7 @@ export async function runDailyGeneration() {
         if (user.accounts.some((a: any) => a.provider === "twitter")) {
             for (let i = 0; i < twitterCount; i++) {
                 try {
-                    const content = await generateSocialPost({
+                    const { content, topic } = await generateSocialPost({
                         topics: topicNames,
                         styleSample: styleSample || undefined,
                         platform: "TWITTER",
@@ -65,7 +65,7 @@ export async function runDailyGeneration() {
                             userId: user.id,
                             content,
                             platform: "TWITTER",
-                            topic: "General",
+                            topic: topic,
                             status: "PENDING",
                         },
                     });
@@ -74,7 +74,7 @@ export async function runDailyGeneration() {
                         id: post.id,
                         content: post.content,
                         platform: post.platform!,
-                        topic: post.topic || "General",
+                        topic: post.topic || topic,
                     });
                 } catch (err) {
                     console.error(`Failed to generate Twitter post for user ${user.id}:`, err);
@@ -87,7 +87,7 @@ export async function runDailyGeneration() {
         if (user.accounts.some((a: any) => a.provider === "linkedin")) {
             for (let i = 0; i < linkedinCount; i++) {
                 try {
-                    const content = await generateSocialPost({
+                    const { content, topic } = await generateSocialPost({
                         topics: topicNames,
                         styleSample: styleSample || undefined,
                         platform: "LINKEDIN",
@@ -99,7 +99,7 @@ export async function runDailyGeneration() {
                             userId: user.id,
                             content,
                             platform: "LINKEDIN",
-                            topic: "General",
+                            topic: topic,
                             status: "PENDING",
                         },
                     });
@@ -108,7 +108,7 @@ export async function runDailyGeneration() {
                         id: post.id,
                         content: post.content,
                         platform: post.platform!,
-                        topic: post.topic || "General",
+                        topic: post.topic || topic,
                     });
                 } catch (err) {
                     console.error(`Failed to generate LinkedIn post for user ${user.id}:`, err);

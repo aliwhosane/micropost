@@ -23,6 +23,12 @@ model User {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Polar.sh Subscription
+  polarSubscriptionId String?
+  polarCustomerId     String?
+  subscriptionStatus  String? // active, incomplete, incomplete_expired, past_due, canceled, unpaid
+  subscriptionPlanId  String?
 }
 
 model Account {

@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ArrowUpRight, Clock, Star, Users, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock, FileText, Hash, Sparkles } from "lucide-react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { triggerManualGeneration } from "@/lib/actions";
 
@@ -12,22 +12,24 @@ export default async function DashboardPage() {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: {
-            posts: {
-                where: { status: "PENDING" },
-                orderBy: { createdAt: "desc" },
-            },
-            topics: {
-                where: { enabled: true },
-                take: 5
-            }
-        },
+        select: { id: true }
     });
 
     if (!user) return <div>User not found</div>;
 
-    const pendingPosts = user.posts || [];
-    const activeTopics = user.topics || [];
+    const [pendingPosts, activeTopicsList, totalPostsCount, publishedPostsCount, activeTopicsCount] = await Promise.all([
+        prisma.post.findMany({
+            where: { userId: user.id, status: "PENDING" },
+            orderBy: { createdAt: "desc" },
+        }),
+        prisma.topic.findMany({
+            where: { userId: user.id, enabled: true },
+            take: 5
+        }),
+        prisma.post.count({ where: { userId: user.id } }),
+        prisma.post.count({ where: { userId: user.id, status: "PUBLISHED" } }),
+        prisma.topic.count({ where: { userId: user.id, enabled: true } })
+    ]);
 
     return (
         <div className="space-y-8">
@@ -41,10 +43,10 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Total Posts" value="0" icon={Star} trend="No history" />
-                <StatCard title="Pending Review" value={pendingPosts.length.toString()} icon={Clock} trend="Needs attention" />
-                <StatCard title="Engagement" value="0" icon={Users} trend="-- this week" />
-                <StatCard title="Followers" value="0" icon={ArrowUpRight} trend="Not connected" />
+                <StatCard title="Total Posts" value={totalPostsCount.toString()} icon={FileText} trend="All time" />
+                <StatCard title="Pending Review" value={pendingPosts.length.toString()} icon={Clock} trend="Action needed" />
+                <StatCard title="Published" value={publishedPostsCount.toString()} icon={CheckCircle2} trend="Success" />
+                <StatCard title="Active Topics" value={activeTopicsCount.toString()} icon={Hash} trend="Configuration" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -58,7 +60,7 @@ export default async function DashboardPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                             {pendingPosts.map((post: any) => (
                                 <PostCard
                                     key={post.id}
@@ -79,25 +81,40 @@ export default async function DashboardPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Active Topics</CardTitle>
-                        <CardDescription>Currently being used for generation.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            {activeTopics.map((topic: any) => (
-                                <div key={topic.id} className="flex items-center p-3 rounded-lg hover:bg-surface-variant/20 transition-colors">
-                                    <div className="h-2 w-2 rounded-full bg-tertiary mr-3" />
-                                    <span className="text-on-surface">{topic.name}</span>
-                                </div>
-                            ))}
-                            {activeTopics.length === 0 && (
-                                <p className="text-sm text-on-surface-variant">No active topics. Go to "Topics" to add some.</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="col-span-3 space-y-4">
+                    <Card className="h-full">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Hash className="h-5 w-5 text-tertiary" />
+                                <span>Active Topics</span>
+                            </CardTitle>
+                            <CardDescription>Topics currently driving your content generation.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {activeTopicsList.map((topic: any) => (
+                                    <div key={topic.id} className="group flex items-center justify-between p-3 rounded-xl bg-surface-variant/30 border border-transparent hover:border-outline-variant hover:bg-surface-variant/50 transition-all cursor-default">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary">
+                                                <Hash className="h-4 w-4" />
+                                            </div>
+                                            <span className="font-medium text-on-surface group-hover:text-primary transition-colors">{topic.name}</span>
+                                        </div>
+                                        <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
+                                    </div>
+                                ))}
+                                {activeTopicsList.length === 0 && (
+                                    <div className="text-center py-8 px-4 rounded-xl border border-dashed border-outline-variant/50">
+                                        <p className="text-sm text-on-surface-variant">No active topics found.</p>
+                                        <Button variant="text" className="mt-2 text-primary h-auto p-0" >
+                                            Create your first topic &rarr;
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

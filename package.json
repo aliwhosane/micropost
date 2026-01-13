@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
@@ -12,6 +12,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
     "@google/generative-ai": "^0.24.1",
+    "@polar-sh/sdk": "^0.42.1",
     "@prisma/client": "5.22.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-email/components": "^1.0.4",
@@ -28,6 +29,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.7.0",
+    "svix": "^1.84.1",
     "tailwind-merge": "^3.4.0",
     "twitter-api-v2": "^1.28.0",
     "zod": "^4.3.5"

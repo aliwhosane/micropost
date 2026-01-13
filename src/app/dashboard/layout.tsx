@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { signOutAction } from "@/lib/actions";
 import { cn } from "@/lib/utils";
-import { Sparkles, LayoutDashboard, PenTool, Settings, User, LogOut, Sliders } from "lucide-react";
+import { Sparkles, LayoutDashboard, PenTool, Settings, User, LogOut, Sliders, FileText } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const navigation = [
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-        { name: "Posts", href: "/dashboard/posts", icon: Sparkles },
+        { name: "Posts", href: "/dashboard/posts", icon: FileText },
         { name: "Topics", href: "/dashboard/topics", icon: PenTool },
         { name: "Settings", href: "/dashboard/settings", icon: Sliders },
     ];
@@ -48,10 +49,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </nav>
 
                 <div className="p-4 border-t border-outline-variant/10">
-                    <Button variant="text" className="w-full justify-start text-on-surface-variant hover:text-error">
-                        <LogOut className="mr-3 h-5 w-5" />
-                        Sign out
-                    </Button>
+                    <form action={signOutAction}>
+                        <Button variant="text" className="w-full justify-start text-on-surface-variant hover:text-error">
+                            <LogOut className="mr-3 h-5 w-5" />
+                            Sign out
+                        </Button>
+                    </form>
                 </div>
             </aside>
 

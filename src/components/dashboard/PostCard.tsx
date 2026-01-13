@@ -2,9 +2,9 @@
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { approvePost, rejectPost, updatePostContent } from "@/lib/actions";
-import { Check, X, Linkedin, Twitter, Pencil } from "lucide-react";
-import { useState } from "react";
+import { approvePost, rejectPost, updatePostContent, regeneratePostAction } from "@/lib/actions";
+import { Check, X, Linkedin, Twitter, Pencil, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface PostCardProps {
     id: string;
@@ -16,9 +16,83 @@ interface PostCardProps {
 }
 
 export function PostCard({ id, content, platform, topic, createdAt, status: initialStatus }: PostCardProps) {
-    const [actionStatus, setActionStatus] = useState<"IDLE" | "APPROVING" | "REJECTING" | "SAVING">("IDLE");
+    const [actionStatus, setActionStatus] = useState<"IDLE" | "APPROVING" | "REJECTING" | "SAVING" | "REGENERATING">("IDLE");
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
+
+    // Selection State
+    const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
+    const [instruction, setInstruction] = useState("");
+    const contentRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (isEditing && textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+        }
+    }, [isEditing, editedContent]);
+
+    // Reset selection when editing starts
+    useEffect(() => {
+        if (isEditing) {
+            setSelection(null);
+        }
+    }, [isEditing]);
+
+    const handleTextSelection = () => {
+        if (isEditing) return;
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+
+        const text = sel.toString().trim();
+        if (!text) {
+            setSelection(null);
+            return;
+        }
+
+        // Ideally check if selection is inside contentRef
+        if (contentRef.current && !contentRef.current.contains(sel.anchorNode)) {
+            setSelection(null);
+            return;
+        }
+
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        // Calculate relative position if needed or use fixed/absolute from body
+        // For simplicity using fixed scrolling coordinates
+        setSelection({
+            text,
+            top: rect.bottom + window.scrollY + 10,
+            left: rect.left + window.scrollX,
+        });
+    };
+
+    const handleRegenerate = async () => {
+        if (!selection || !instruction.trim()) return;
+
+        setActionStatus("REGENERATING");
+        await regeneratePostAction(id, selection.text, instruction);
+        setActionStatus("IDLE");
+        setSelection(null);
+        setInstruction("");
+        // Optimistic update or wait for revalidation? 
+        // Revalidation is handled in action, but we might want to refetch or just wait.
+        // For smoother UX, we might want local update if action returned new content.
+    };
+
+    // Close popover on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (selection && !(e.target as HTMLElement).closest(".selection-popover")) {
+                setSelection(null);
+            }
+        };
+        window.addEventListener("mousedown", handleClickOutside);
+        return () => window.removeEventListener("mousedown", handleClickOutside);
+    }, [selection]);
 
     const handleApprove = async () => {
         setActionStatus("APPROVING");
@@ -52,96 +126,159 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     const platformColor = platform === "LINKEDIN" ? "text-[#0077b5]" : "text-[#1DA1F2]";
 
     return (
-        <div className="flex flex-col sm:flex-row items-start justify-between p-4 rounded-lg bg-surface-variant/20 border border-outline-variant/20 gap-4">
-            <div className="space-y-2 flex-1 w-full">
+        <div className="relative flex flex-col p-5 rounded-xl bg-surface-variant/20 border border-outline-variant/20 gap-4 hover:border-outline-variant/40 transition-colors">
+
+            {/* Selection Popover */}
+            {selection && (
+                <div
+                    className="selection-popover fixed z-50 bg-surface shadow-xl rounded-lg p-3 border border-outline-variant w-72 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200"
+                    style={{ top: selection.top, left: selection.left }}
+                >
+                    <div className="text-xs font-semibold text-on-surface-variant flex justify-between">
+                        <span>Refine Selection</span>
+                        <button onClick={() => setSelection(null)}><X className="h-3 w-3" /></button>
+                    </div>
+                    <textarea
+                        className="text-sm p-2 rounded bg-surface-variant/30 border-none focus:ring-1 focus:ring-primary h-16 resize-none"
+                        placeholder="e.g. Make it funnier..."
+                        value={instruction}
+                        onChange={(e) => setInstruction(e.target.value)}
+                        autoFocus
+                    />
+                    <Button
+                        size="sm"
+                        variant="filled"
+                        className="text-xs h-7 w-full flex justify-center gap-2"
+                        onClick={handleRegenerate}
+                        isLoading={actionStatus === "REGENERATING"}
+                    >
+                        <Sparkles className="h-3 w-3" /> Regenerate
+                    </Button>
+                </div>
+            )}
+
+            {/* Header: Platform & Metadata */}
+            <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                    <PlatformIcon className={`h-4 w-4 ${platformColor}`} />
-                    <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                    <PlatformIcon className={`h-5 w-5 ${platformColor}`} />
+                    <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
                         {topic}
                     </span>
                     <span className="text-xs text-on-surface-variant">• {new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {actionStatus === "REGENERATING" && <span className="text-xs text-primary animate-pulse font-medium">Regenerating...</span>}
                     {initialStatus === "PUBLISHED" && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 ml-2">PUBLISHED</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">PUBLISHED</span>
                     )}
                     {initialStatus === "FAILED" && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 ml-2">FAILED</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">FAILED</span>
                     )}
                 </div>
+            </div>
+
+
+
+            {/* Body: Content */}
+            <div className="w-full">
                 {isEditing ? (
                     <textarea
-                        className="w-full min-h-[100px] p-2 rounded-md bg-surface border border-outline-variant text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                        ref={textareaRef}
+                        className="w-full p-3 rounded-lg bg-surface border border-outline-variant text-base text-on-surface focus:outline-none focus:ring-2 focus:ring-primary font-medium leading-relaxed resize-none shadow-inner overflow-hidden"
                         value={editedContent}
                         onChange={(e) => setEditedContent(e.target.value)}
                         disabled={actionStatus === "SAVING"}
+                        rows={1}
                     />
                 ) : (
-                    <p className="font-medium text-on-surface whitespace-pre-wrap text-sm leading-relaxed">
-                        {content}
-                    </p>
+                    <div
+                        ref={contentRef}
+                        onMouseUp={handleTextSelection}
+                        className="font-medium text-on-surface whitespace-pre-wrap text-[15px] leading-7 cursor-text p-1"
+                    >
+                        {selection ? (
+                            <>
+                                {content.split(selection.text).map((part, index, array) => {
+                                    if (index === array.length - 1) return part;
+                                    return (
+                                        <span key={index}>
+                                            {part}
+                                            <span className="bg-primary/20 text-primary-dark">{selection.text}</span>
+                                        </span>
+                                    );
+                                })}
+                            </>
+                        ) : (
+                            content
+                        )}
+                    </div>
                 )}
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-start">
+
+            {/* Footer: Actions */}
+            <div className="flex items-center justify-end pt-2 border-t border-outline-variant/10">
                 {(initialStatus === "PENDING" || initialStatus === "DRAFT") ? (
                     <>
                         {isEditing ? (
-                            <>
+                            <div className="flex items-center gap-2">
                                 <Button
                                     size="sm"
                                     variant="outlined"
-                                    className="h-8 w-8 p-0 rounded-full border-outline-variant text-on-surface-variant hover:bg-surface-variant"
+                                    className="border-outline-variant text-on-surface-variant hover:bg-surface-variant hover:text-on-surface"
                                     onClick={handleCancel}
                                     disabled={actionStatus === "SAVING"}
-                                    aria-label="Cancel Edit"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3.5 w-3.5" />
+                                    <span>Cancel</span>
                                 </Button>
                                 <Button
                                     size="sm"
                                     variant="filled"
-                                    className="h-8 w-8 p-0 rounded-full bg-primary hover:bg-primary/90"
+                                    className="bg-primary hover:bg-primary/90 min-w-[80px]"
                                     onClick={handleSave}
                                     isLoading={actionStatus === "SAVING"}
-                                    aria-label="Save Changes"
                                 >
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-3.5 w-3.5" />
+                                    <span>Save</span>
                                 </Button>
-                            </>
+                            </div>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-2">
                                 <Button
                                     size="sm"
-                                    variant="outlined"
-                                    className="h-8 w-8 p-0 rounded-full border-outline-variant text-on-surface-variant hover:bg-surface-variant"
+                                    variant="tonal"
+                                    className="bg-secondary-container text-on-secondary-container hover:bg-secondary-container/80"
                                     onClick={() => setIsEditing(true)}
-                                    aria-label="Edit Post"
                                 >
-                                    <Pencil className="h-4 w-4" />
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    <span>Edit</span>
                                 </Button>
                                 <Button
                                     size="sm"
                                     variant="outlined"
-                                    className="h-8 w-8 p-0 rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                    className="border-error text-error hover:bg-error-container hover:text-on-error-container hover:border-error-container"
                                     onClick={handleReject}
                                     isLoading={actionStatus === "REJECTING"}
-                                    aria-label="Reject Post"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3.5 w-3.5" />
+                                    <span>Reject</span>
                                 </Button>
                                 <Button
                                     size="sm"
                                     variant="filled"
-                                    className="h-8 w-8 p-0 rounded-full bg-green-600 hover:bg-green-700"
+                                    className="bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200/50 shadow-sm min-w-[90px] border-transparent text-white"
                                     onClick={handleApprove}
                                     isLoading={actionStatus === "APPROVING"}
-                                    aria-label="Approve Post"
                                 >
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-3.5 w-3.5" />
+                                    <span>Approve</span>
                                 </Button>
-                            </>
+                            </div>
                         )}
                     </>
                 ) : (
-                    <div className="text-sm font-medium text-on-surface-variant/50 italic">
+                    <div className="text-sm font-medium text-on-surface-variant/50 italic px-2">
                         {initialStatus === "PUBLISHED" ? "Posted" : initialStatus}
                     </div>
                 )}

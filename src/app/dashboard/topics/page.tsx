@@ -4,7 +4,7 @@ import { addTopic, deleteTopic, toggleTopic } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card";
-import { Trash2, Plus, PenTool, CheckCircle2, XCircle } from "lucide-react";
+import { Trash2, Plus, PenTool, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { revalidatePath } from "next/cache";
 
 export default async function TopicsPage() {
@@ -25,21 +25,28 @@ export default async function TopicsPage() {
                 <p className="text-on-surface-variant mt-2">Manage the subjects you want your AI ghostwriter to focus on.</p>
             </div>
 
-            <Card>
+            <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
                 <CardHeader>
-                    <CardTitle>Add New Topic</CardTitle>
-                    <CardDescription>What should we write about?</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                        <Sparkles className="h-5 w-5" />
+                        Add New Topic
+                    </CardTitle>
+                    <CardDescription text-class="text-on-surface-variant/80">
+                        What subject should your AI ghostwriter focus on next?
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={addTopic} className="flex gap-4 items-end">
-                        <Input
-                            name="topic"
-                            label="Topic Name (e.g., 'React Server Components')"
-                            className="flex-1"
-                            required
-                        />
-                        <Button type="submit">
-                            <Plus className="mr-2 h-4 w-4" /> Add Topic
+                    <form action={addTopic} className="flex flex-col sm:flex-row gap-4 items-end">
+                        <div className="flex-1 w-full">
+                            <Input
+                                name="topic"
+                                placeholder="e.g. 'React Server Components', 'SaaS Marketing', 'Personal Finance'"
+                                className="bg-surface border-outline-variant focus:border-primary h-11"
+                                required
+                            />
+                        </div>
+                        <Button type="submit" variant="filled" className="h-11 px-6 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20">
+                            <Plus className="mr-2 h-4 w-4" /> Create Topic
                         </Button>
                     </form>
                 </CardContent>
