@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, Zap, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Eraser, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
 
 export default function BuzzwordKiller() {
     const [text, setText] = useState("");
@@ -51,7 +51,7 @@ export default function BuzzwordKiller() {
             <div className="space-y-12">
                 <div className="text-center space-y-4 max-w-3xl mx-auto">
                     <div className="mx-auto w-16 h-16 bg-yellow-500/10 rounded-2xl flex items-center justify-center mb-6">
-                        <Zap className="w-8 h-8 text-yellow-600" />
+                        <Eraser className="w-8 h-8 text-yellow-600" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-on-surface">Buzzword Killer</h1>
                     <p className="text-xl text-on-surface-variant">
@@ -83,7 +83,7 @@ export default function BuzzwordKiller() {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    <Zap className="w-5 h-5" />
+                                    <Eraser className="w-5 h-5" />
                                     Kill Jargon
                                 </div>
                             )}

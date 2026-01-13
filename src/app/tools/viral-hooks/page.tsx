@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Loader2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Magnet, Loader2, Copy, Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 
 export default function ViralHooksGenerator() {
@@ -63,7 +63,7 @@ export default function ViralHooksGenerator() {
             <div className="space-y-12">
                 <div className="text-center space-y-4 max-w-3xl mx-auto">
                     <div className="mx-auto w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
-                        <Sparkles className="w-8 h-8 text-purple-600" />
+                        <Magnet className="w-8 h-8 text-purple-600" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-on-surface">Viral API Hook Generator</h1>
                     <p className="text-xl text-on-surface-variant">

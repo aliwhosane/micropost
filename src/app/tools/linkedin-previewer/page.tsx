@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, Smartphone, Monitor } from "lucide-react";
+import { ArrowLeft, Smartphone, Monitor, Eye } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 
 export default function LinkedInPreviewer() {
@@ -24,6 +24,9 @@ export default function LinkedInPreviewer() {
                 {/* Input Section */}
                 <div className="space-y-6">
                     <div>
+                        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                            <Eye className="w-8 h-8 text-primary" />
+                        </div>
                         <h1 className="text-4xl font-bold text-on-surface mb-2">LinkedIn Previewer</h1>
                         <p className="text-on-surface-variant">
                             Don't let your hook get buried. Check exactly where your post cuts off on mobile and desktop.

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, User, Loader2, Copy, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, UserCog, Loader2, Copy, Check, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 
@@ -62,7 +62,7 @@ export default function BioOptimizer() {
             <div className="space-y-12">
                 <div className="text-center space-y-4 max-w-3xl mx-auto">
                     <div className="mx-auto w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
-                        <User className="w-8 h-8 text-blue-600" />
+                        <UserCog className="w-8 h-8 text-blue-600" />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-on-surface">AI Bio Optimizer</h1>
                     <p className="text-xl text-on-surface-variant">
@@ -103,8 +103,8 @@ export default function BioOptimizer() {
                                         key={g}
                                         onClick={() => setGoal(g)}
                                         className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${goal === g
-                                                ? "bg-primary text-on-primary ring-2 ring-primary ring-offset-2 ring-offset-surface"
-                                                : "bg-surface-variant text-on-surface-variant hover:bg-surface-variant/80"
+                                            ? "bg-primary text-on-primary ring-2 ring-primary ring-offset-2 ring-offset-surface"
+                                            : "bg-surface-variant text-on-surface-variant hover:bg-surface-variant/80"
                                             }`}
                                     >
                                         {g}

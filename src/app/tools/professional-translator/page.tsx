@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Copy, Check } from "lucide-react";
+import { ArrowLeft, Sparkles, Copy, Check, Languages } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
 export default function ProfessionalTranslator() {
@@ -45,6 +45,9 @@ export default function ProfessionalTranslator() {
 
             <div className="space-y-8">
                 <div className="text-center space-y-4">
+                    <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+                        <Languages className="w-8 h-8 text-secondary" />
+                    </div>
                     <h1 className="text-4xl font-bold text-on-surface">Professional Translator</h1>
                     <p className="text-xl text-on-surface-variant">
                         Turn "You are an idiot" into "We may have a divergence in perspective."
@@ -86,7 +89,7 @@ export default function ProfessionalTranslator() {
                         {/* Output */}
                         <div className="space-y-2 relative">
                             <label className="text-xs uppercase font-bold text-on-surface-variant tracking-wider flex items-center gap-2">
-                                <Sparkles className="h-3 w-3 text-secondary" /> Corporate Translation
+                                <Languages className="h-3 w-3 text-secondary" /> Corporate Translation
                             </label>
                             <div className="w-full h-[250px] p-4 rounded-xl bg-secondary/5 border border-secondary/20 font-sans text-base relative">
                                 {isLoading ? (

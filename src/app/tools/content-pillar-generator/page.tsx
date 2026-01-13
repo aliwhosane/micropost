@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { ArrowLeft, Target, Loader2, List, ArrowRight } from "lucide-react";
+import { ArrowLeft, Target, Loader2, List, ArrowRight, Layers } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 
@@ -52,6 +52,9 @@ export default function ContentPillarGenerator() {
 
             <div className="space-y-12">
                 <div className="text-center space-y-4 max-w-3xl mx-auto">
+                    <div className="mx-auto w-16 h-16 bg-tertiary/10 rounded-2xl flex items-center justify-center mb-6">
+                        <Layers className="w-8 h-8 text-tertiary" />
+                    </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-on-surface">Content Pillar Generator</h1>
                     <p className="text-xl text-on-surface-variant">
                         Stop guessing what to post. Enter your niche, and we'll build your content strategy foundation in seconds.

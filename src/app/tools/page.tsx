@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Zap, Send } from "lucide-react";
+import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Zap, Send, Heart, Maximize2, Layers, Magnet, UserCog, Eraser, Wand2, Languages, MessageCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -48,10 +48,10 @@ export default function ToolsPage() {
 
                 {/* Tool 2: Professional Translator */}
                 <Link href="/tools/professional-translator" className="group">
-                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5">
+                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-secondary/50 transition-all hover:shadow-lg hover:shadow-secondary/5">
                         <CardHeader>
                             <div className="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-4 group-hover:scale-110 transition-transform">
-                                <Sparkles className="h-6 w-6" />
+                                <Languages className="h-6 w-6" />
                             </div>
                             <CardTitle className="text-2xl group-hover:text-secondary transition-colors">Professional Translator</CardTitle>
                             <CardDescription>
@@ -68,10 +68,10 @@ export default function ToolsPage() {
 
                 {/* Tool 3: Content Pillar Generator */}
                 <Link href="/tools/content-pillar-generator" className="group">
-                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5">
+                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-tertiary/50 transition-all hover:shadow-lg hover:shadow-tertiary/5">
                         <CardHeader>
                             <div className="h-12 w-12 bg-tertiary/10 rounded-xl flex items-center justify-center text-tertiary mb-4 group-hover:scale-110 transition-transform">
-                                <Target className="h-6 w-6" />
+                                <Layers className="h-6 w-6" />
                             </div>
                             <CardTitle className="text-2xl group-hover:text-tertiary transition-colors">Content Pillar Generator</CardTitle>
                             <CardDescription>
@@ -107,10 +107,10 @@ export default function ToolsPage() {
                 </Link>
                 {/* Tool 5: Viral Hook Generator */}
                 <Link href="/tools/viral-hooks" className="group">
-                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5">
+                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-purple-600/50 transition-all hover:shadow-lg hover:shadow-purple-600/5">
                         <CardHeader>
                             <div className="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
-                                <Sparkles className="h-6 w-6" />
+                                <Magnet className="h-6 w-6" />
                             </div>
                             <CardTitle className="text-2xl group-hover:text-purple-600 transition-colors">Viral Hook Generator</CardTitle>
                             <CardDescription>
@@ -125,61 +125,42 @@ export default function ToolsPage() {
                     </Card>
                 </Link>
                 <Link href="/tools/bio-optimizer" className="block group">
-                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-500/50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-500/50 relative overflow-hidden border-outline-variant/40">
                         <CardHeader>
                             <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <User className="w-6 h-6 text-blue-600" />
+                                <UserCog className="w-6 h-6 text-blue-600" />
                             </div>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-2xl group-hover:text-blue-600 transition-colors">
                                 AI Bio Optimizer
-                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-blue-500" />
                             </CardTitle>
+                            <CardDescription>
+                                Craft the perfect social media bio for Twitter, LinkedIn, and Instagram.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-on-surface-variant">
-                                Craft the perfect social media bio for Twitter, LinkedIn, and Instagram.
-                                Optimize for growth, sales, or authority in seconds.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/tools/bio-optimizer" className="block group">
-                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-500/50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <CardHeader>
-                            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <User className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <CardTitle className="flex items-center gap-2">
-                                AI Bio Optimizer
-                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-blue-500" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-on-surface-variant">
-                                Craft the perfect social media bio for Twitter, LinkedIn, and Instagram.
-                                Optimize for growth, sales, or authority in seconds.
-                            </p>
+                            <Button variant="text" className="pl-0 group-hover:text-blue-600">
+                                Optimize Bio <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
                         </CardContent>
                     </Card>
                 </Link>
                 <Link href="/tools/buzzword-killer" className="block group">
-                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-yellow-500/50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-yellow-500/50 relative overflow-hidden border-outline-variant/40">
                         <CardHeader>
                             <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                <Zap className="w-6 h-6 text-yellow-600" />
+                                <Eraser className="w-6 h-6 text-yellow-600" />
                             </div>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-2xl group-hover:text-yellow-600 transition-colors">
                                 Buzzword Killer
-                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-yellow-500" />
                             </CardTitle>
+                            <CardDescription>
+                                Identify toxic corporate jargon and replace it with punchy, human alternatives.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-on-surface-variant">
-                                Identify toxic corporate jargon and replace it with punchy, human alternatives.
-                            </p>
+                            <Button variant="text" className="pl-0 group-hover:text-yellow-600">
+                                Kill Jargon <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
                         </CardContent>
                     </Card>
                 </Link>
@@ -202,6 +183,65 @@ export default function ToolsPage() {
                         </CardContent>
                     </Card>
                 </Link>
+                <Link href="/tools/feature-to-benefit" className="block group">
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-pink-500/50 relative overflow-hidden border-outline-variant/40">
+                        <CardHeader>
+                            <div className="w-12 h-12 bg-pink-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Wand2 className="w-6 h-6 text-pink-600" />
+                            </div>
+                            <CardTitle className="flex items-center gap-2 text-2xl group-hover:text-pink-600 transition-colors">
+                                Feature to Benefit
+                            </CardTitle>
+                            <CardDescription>
+                                Turn boring technical specs into irresistible emotional marketing copy.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button variant="text" className="pl-0 group-hover:text-pink-600">
+                                Convert Copy <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/tools/tweet-to-linkedin-expander" className="block group">
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-blue-700/50 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-700/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <CardHeader>
+                            <div className="w-12 h-12 bg-blue-700/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Maximize2 className="w-6 h-6 text-blue-700" />
+                            </div>
+                            <CardTitle className="flex items-center gap-2">
+                                Tweet to LinkedIn
+                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-blue-700" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-on-surface-variant">
+                                Expand short tweets into high-performing, formatted LinkedIn posts.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/tools/comment-reply-assistant" className="block group">
+                    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-green-500/50 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <CardHeader>
+                            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <MessageCircle className="w-6 h-6 text-green-600" />
+                            </div>
+                            <CardTitle className="flex items-center gap-2">
+                                Reply Assistant
+                                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-green-500" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-on-surface-variant">
+                                Engagement is key. Generate funny, grateful, or engaging replies instantly.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </Link>
+
             </div>
         </div>
     );
