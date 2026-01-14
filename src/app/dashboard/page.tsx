@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, FileText, Hash, Sparkles } from "lucide-react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveTopicsCard } from "@/components/dashboard/ActiveTopicsCard";
+import { GenerationWizard } from "@/components/dashboard/GenerationWizard";
 import { triggerManualGeneration } from "@/lib/actions";
 
 export default async function DashboardPage() {
@@ -38,11 +39,7 @@ export default async function DashboardPage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight text-on-surface">Overview</h2>
-                <form action={triggerManualGeneration}>
-                    <Button variant="tonal" type="submit">
-                        Simulate Generation <Sparkles className="ml-2 h-4 w-4" />
-                    </Button>
-                </form>
+                <GenerationWizard />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

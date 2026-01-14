@@ -8,6 +8,7 @@ import { SocialConnection } from "@/components/settings/SocialConnection";
 import { Linkedin, Twitter, Save, AlertCircle, Zap, Shield, Wand2 } from "lucide-react";
 import { AnalyzeButton } from "@/components/settings/AnalyzeButton";
 import { PricingCard } from "@/components/settings/PricingCard";
+import { FormSlider } from "@/components/settings/FormSlider";
 
 export default async function SettingsPage() {
     const session = await auth();
@@ -69,50 +70,26 @@ export default async function SettingsPage() {
                                     <div className="space-y-8">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                             {/* Twitter Slider */}
-                                            <div className="space-y-6 p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 transition-all hover:border-primary/20 hover:shadow-sm group">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-base font-semibold text-on-surface flex items-center gap-2">
-                                                        <Twitter className="h-4 w-4 text-[#1DA1F2] fill-current" />
-                                                        Twitter / X
-                                                    </label>
-                                                    <span className="text-2xl font-bold text-primary tabular-nums">
-                                                        {prefs.twitterPostsPerDay} <span className="text-xs font-medium text-on-surface-variant/70 uppercase tracking-wider ml-1">posts/day</span>
-                                                    </span>
-                                                </div>
-                                                <Slider
-                                                    name="twitterPostsPerDay"
-                                                    defaultValue={[prefs.twitterPostsPerDay]}
-                                                    max={10}
-                                                    step={1}
-                                                    className="py-2"
-                                                />
-                                                <p className="text-xs text-on-surface-variant">
-                                                    Maximum daily automated tweets.
-                                                </p>
-                                            </div>
+                                            <FormSlider
+                                                name="twitterPostsPerDay"
+                                                defaultValue={prefs.twitterPostsPerDay}
+                                                max={10}
+                                                step={1}
+                                                label="Twitter / X"
+                                                icon={<Twitter className="h-4 w-4 fill-current text-[#1DA1F2]" />}
+                                                description="Maximum daily automated tweets."
+                                            />
 
                                             {/* LinkedIn Slider */}
-                                            <div className="space-y-6 p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 transition-all hover:border-primary/20 hover:shadow-sm group">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-base font-semibold text-on-surface flex items-center gap-2">
-                                                        <Linkedin className="h-4 w-4 text-[#0077b5] fill-current" />
-                                                        LinkedIn
-                                                    </label>
-                                                    <span className="text-2xl font-bold text-primary tabular-nums">
-                                                        {prefs.linkedinPostsPerDay} <span className="text-xs font-medium text-on-surface-variant/70 uppercase tracking-wider ml-1">posts/day</span>
-                                                    </span>
-                                                </div>
-                                                <Slider
-                                                    name="linkedinPostsPerDay"
-                                                    defaultValue={[prefs.linkedinPostsPerDay]}
-                                                    max={5}
-                                                    step={1}
-                                                    className="py-2"
-                                                />
-                                                <p className="text-xs text-on-surface-variant">
-                                                    Maximum daily professional posts.
-                                                </p>
-                                            </div>
+                                            <FormSlider
+                                                name="linkedinPostsPerDay"
+                                                defaultValue={prefs.linkedinPostsPerDay}
+                                                max={5}
+                                                step={1}
+                                                label="LinkedIn"
+                                                icon={<Linkedin className="h-4 w-4 fill-current text-[#0077b5]" />}
+                                                description="Maximum daily professional posts."
+                                            />
                                         </div>
                                     </div>
 
@@ -196,9 +173,9 @@ export default async function SettingsPage() {
 
                         {user.subscriptionStatus === 'active' ? (
                             <PricingCard
-                                name="Premium Plan"
-                                price="$999"
-                                description="You are a founding member."
+                                name={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "Lifetime Access" : "Premium Plan"}
+                                price={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "$999" : "Active"}
+                                description={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "You are a founding member." : "Thank you for your support!"}
                                 features={["Unlimited Posts", "Priority Support", "Feature Access"]}
                                 buttonText="Manage Subscription"
                                 productId=""

@@ -2,12 +2,13 @@ import { prisma } from "@/lib/db";
 import { generateSocialPost } from "@/lib/ai";
 import { sendDailyDigest } from "@/lib/email";
 
-export async function runDailyGeneration() {
+export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string) {
     console.log("Starting daily generation workflow...");
 
     // 1. Fetch users with preferences and enabled topics
     const users = await prisma.user.findMany({
         where: {
+            ...(targetUserId ? { id: targetUserId } : {}),
             preferences: {
                 isNot: null,
             },
@@ -57,6 +58,12 @@ export async function runDailyGeneration() {
                         topics: topicNames,
                         styleSample: styleSample || undefined,
                         platform: "TWITTER",
+                        topicAttributes: user.topics.map((t: any) => ({
+                            name: t.name,
+                            notes: t.notes,
+                            stance: t.stance
+                        })),
+                        temporaryThoughts,
                     });
 
                     // Save to Database
@@ -91,6 +98,12 @@ export async function runDailyGeneration() {
                         topics: topicNames,
                         styleSample: styleSample || undefined,
                         platform: "LINKEDIN",
+                        topicAttributes: user.topics.map((t: any) => ({
+                            name: t.name,
+                            notes: t.notes,
+                            stance: t.stance
+                        })),
+                        temporaryThoughts,
                     });
 
                     // Save to Database

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Check, Star, Zap } from "lucide-react";
-import { createCheckout } from "@/lib/polar-actions";
+import { createCheckout, createCustomerPortalSession } from "@/lib/polar-actions";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -85,13 +85,15 @@ export function PricingCard({ name, price, description, features, buttonText, pr
                 </CardContent>
                 <CardFooter className="pt-4 pb-6">
                     {isActive ? (
-                        <Button
-                            className="w-full font-semibold shadow-none cursor-default bg-green-500/10 text-green-600 hover:bg-green-500/20"
-                            variant="filled"
-                            size="lg"
-                        >
-                            Active Plan
-                        </Button>
+                        <form action={() => createCustomerPortalSession()} className="w-full">
+                            <Button
+                                className="w-full font-semibold shadow-none bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700"
+                                variant="filled"
+                                size="lg"
+                            >
+                                Unsubscribe / Manage
+                            </Button>
+                        </form>
                     ) : (
                         <form action={() => createCheckout(productId)} className="w-full">
                             <Button

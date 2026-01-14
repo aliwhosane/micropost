@@ -6,17 +6,29 @@ interface GeneratePostParams {
     topics: string[];
     styleSample?: string;
     platform: "LINKEDIN" | "TWITTER";
+    topicAttributes?: {
+        name: string;
+        notes?: string;
+        stance?: string;
+    }[];
+    temporaryThoughts?: string;
 }
 
-export async function generateSocialPost({ topics, styleSample, platform }: GeneratePostParams): Promise<{ content: string; topic: string }> {
+export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts }: GeneratePostParams): Promise<{ content: string; topic: string }> {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const topic = topics[Math.floor(Math.random() * topics.length)];
+    // Select a random topic from the string name array for fallback/legacy compatibility,
+    // but try to find its matching attributes.
+    const topicName = topics[Math.floor(Math.random() * topics.length)];
+    const attributes = topicAttributes?.find(t => t.name === topicName);
 
     const prompt = `
     You are an expert social media ghostwriter.
     Platform: ${platform}
-    Topic: ${topic}
+    Topic: ${topicName}
+    ${attributes?.stance ? `User's Stance/Perspective: ${attributes.stance}` : ""}
+    ${attributes?.notes ? `User's Standing Notes: ${attributes.notes}` : ""}
+    ${temporaryThoughts ? `CURRENT THOUGHTS (PRIORITY OVERRIDE): "${temporaryThoughts}"` : ""}
     ${styleSample ? `Writing Style to Mimic: ${styleSample}` : "Style: Professional, engaging, and concise."}
     
     Constraints:
@@ -36,17 +48,18 @@ export async function generateSocialPost({ topics, styleSample, platform }: Gene
         - Start with a strong, engaging hook.
     - Do NOT include "Here is a post" or quotes. Just output the content.
     - CRITICAL: MIMIC the provided writing style closely. If the sample is casual/witty, be casual/witty. If it's formal/academic, be formal/academic.
+    - CRITICAL: If the user has provided a STANCE or NOTES, you MUST reflect that specific perspective. Do not write a generic post.
     
-    Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : "a Tweet"} about ${topic}.
+    Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : "a Tweet"} about ${topicName}.
   `;
 
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        return { content: response.text().trim(), topic };
+        return { content: response.text().trim(), topic: topicName };
     } catch (error) {
         console.error("AI Generation Error:", error);
-        return { content: "Error generating content. Please try again later.", topic };
+        return { content: "Error generating content. Please try again later.", topic: topicName };
     }
 }
 

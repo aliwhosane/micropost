@@ -74,5 +74,36 @@ export async function POST(req: Request) {
         });
     }
 
+    if (eventType === "order.created" || eventType === "order.paid") {
+        const order = evt.data;
+        // Handle one-time purchases (Lifetime access)
+        if (order.paid && !order.subscription_id) {
+            const email = order.customer.email;
+            if (email) {
+                await prisma.user.update({
+                    where: { email },
+                    data: {
+                        polarOrderId: order.id,
+                        polarCustomerId: order.customer_id,
+                        subscriptionStatus: 'active',
+                        subscriptionPlanId: order.product_id,
+                    }
+                });
+            }
+        }
+    }
+
+    if (eventType === "order.refunded") {
+        const order = evt.data;
+        if (!order.subscription_id) {
+            await prisma.user.updateMany({
+                where: { polarOrderId: order.id },
+                data: {
+                    subscriptionStatus: 'refunded'
+                }
+            });
+        }
+    }
+
     return new Response("", { status: 200 });
 }

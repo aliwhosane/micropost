@@ -17,6 +17,8 @@ export async function addTopic(formData: FormData) {
     }
 
     const topicName = formData.get("topic") as string;
+    const notes = formData.get("notes") as string;
+    const stance = formData.get("stance") as string;
 
     if (!topicName || topicName.trim().length === 0) {
         return;
@@ -33,9 +35,34 @@ export async function addTopic(formData: FormData) {
         data: {
             name: topicName,
             userId: user.id,
+            notes: notes || null,
+            stance: stance || "NEUTRAL",
         },
     });
 
+    revalidatePath("/dashboard/topics");
+    revalidatePath("/dashboard");
+}
+
+export async function updateTopicPreferences(topicId: string, notes: string | undefined, stance: string | undefined) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    // Check ownership
+    const existing = await prisma.topic.findFirst({
+        where: { id: topicId, userId: session.user.id }
+    });
+    if (!existing) throw new Error("Topic not found or unauthorized");
+
+    await prisma.topic.update({
+        where: { id: topicId },
+        data: {
+            notes: notes,
+            stance: stance,
+        }
+    });
+
+    revalidatePath("/dashboard");
     revalidatePath("/dashboard/topics");
 }
 
@@ -281,10 +308,15 @@ export async function analyzeSocialStyleAction(platform: "TWITTER") {
     revalidatePath("/dashboard/settings");
 }
 
-export async function triggerManualGeneration() {
+export async function triggerManualGeneration(formData?: FormData) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    await runDailyGeneration();
+    let temporaryThoughts;
+    if (formData) {
+        temporaryThoughts = formData.get("thoughts") as string;
+    }
+
+    await runDailyGeneration(session.user.id, temporaryThoughts);
     revalidatePath("/dashboard");
 }

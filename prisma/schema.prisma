@@ -16,11 +16,11 @@ model User {
   password      String?
   accounts      Account[]
   sessions      Session[]
-  
-  posts         Post[]
-  topics        Topic[]
-  preferences   Preferences?
-  
+
+  posts       Post[]
+  topics      Topic[]
+  preferences Preferences?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -29,21 +29,22 @@ model User {
   polarCustomerId     String?
   subscriptionStatus  String? // active, incomplete, incomplete_expired, past_due, canceled, unpaid
   subscriptionPlanId  String?
+  polarOrderId        String?
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -69,46 +70,48 @@ model VerificationToken {
 // App Specific Models
 
 model Topic {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   name    String
   userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled Boolean @default(true)
-  
+  notes   String?
+  stance  String? // "PRO", "ANTI", "NEUTRAL", "BOTH"
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  content   String
-  topic     String?
-  status    String   @default("DRAFT") // DRAFT, PENDING, APPROVED, PUBLISHED, FAILED
-  platform  String? // TWITTER, LINKEDIN, BOTH
-  
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id       String  @id @default(cuid())
+  content  String
+  topic    String?
+  status   String  @default("DRAFT") // DRAFT, PENDING, APPROVED, PUBLISHED, FAILED
+  platform String? // TWITTER, LINKEDIN, BOTH
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   scheduledFor DateTime?
   publishedAt  DateTime?
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Preferences {
-  id          String @id @default(cuid())
-  userId      String @unique
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  postsPerDay       Int    @default(1) // Deprecated
-  twitterPostsPerDay Int   @default(1)
-  linkedinPostsPerDay Int  @default(1)
-  
-  styleSample       String? // Large text field
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postsPerDay         Int @default(1) // Deprecated
+  twitterPostsPerDay  Int @default(1)
+  linkedinPostsPerDay Int @default(1)
+
+  styleSample String? // Large text field
+
   linkedinConnected Boolean @default(false)
   twitterConnected  Boolean @default(false)
-  
+
   updatedAt DateTime @updatedAt
 }
