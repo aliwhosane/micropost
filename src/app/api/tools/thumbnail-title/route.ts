@@ -12,6 +12,13 @@ export async function POST(req: Request) {
             );
         }
 
+        if (videoTitle.length > 200) {
+            return NextResponse.json(
+                { error: "Video title is too long (max 200 characters)." },
+                { status: 400 }
+            );
+        }
+
         if (!process.env.GEMINI_API_KEY) {
             return NextResponse.json(
                 { error: "Gemini API key not configured" },

@@ -55,7 +55,7 @@ export async function updateTopicPreferences(topicId: string, notes: string | un
     if (!existing) throw new Error("Topic not found or unauthorized");
 
     await prisma.topic.update({
-        where: { id: topicId },
+        where: { id: topicId, userId: session.user.id },
         data: {
             notes: notes,
             stance: stance,
@@ -76,6 +76,7 @@ export async function deleteTopic(topicId: string) {
     await prisma.topic.delete({
         where: {
             id: topicId,
+            userId: session.user.id,
         },
     });
 
@@ -87,7 +88,7 @@ export async function toggleTopic(topicId: string, currentState: boolean) {
     if (!session?.user) throw new Error("Unauthorized");
 
     await prisma.topic.update({
-        where: { id: topicId },
+        where: { id: topicId, userId: session.user.id },
         data: { enabled: !currentState }
     });
 
@@ -144,7 +145,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
 
     // Fetch the post first to get details for publishing
     const post = await prisma.post.findUnique({
-        where: { id: postId },
+        where: { id: postId, userId: session.user.id },
     });
 
     if (!post) throw new Error("Post not found");
@@ -152,7 +153,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
     // If scheduledAt is provided, just mark as APPROVED and set time
     if (scheduledAt) {
         await prisma.post.update({
-            where: { id: postId },
+            where: { id: postId, userId: session.user.id },
             data: {
                 status: "APPROVED",
                 scheduledFor: new Date(scheduledAt)
@@ -165,7 +166,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
     // Update status to APPROVED locally first (or keep as PENDING until published?)
     // Let's mark as APPROVED, then try to publish.
     await prisma.post.update({
-        where: { id: postId },
+        where: { id: postId, userId: session.user.id },
         data: { status: "APPROVED" }
     });
 
@@ -180,7 +181,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
 
         if (result.success) {
             await prisma.post.update({
-                where: { id: postId },
+                where: { id: postId, userId: session.user.id },
                 data: {
                     status: "PUBLISHED",
                     publishedAt: new Date(),
@@ -189,7 +190,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
         } else {
             // Optionally mark as FAILED
             await prisma.post.update({
-                where: { id: postId },
+                where: { id: postId, userId: session.user.id },
                 data: { status: "FAILED" }
             });
         }
@@ -203,7 +204,7 @@ export async function rejectPost(postId: string) {
     if (!session?.user) throw new Error("Unauthorized");
 
     await prisma.post.update({
-        where: { id: postId },
+        where: { id: postId, userId: session.user.id },
         data: { status: "REJECTED" }
     });
 
@@ -221,18 +222,15 @@ export async function updatePostContent(postId: string, newContent: string) {
     // Ideally we should check if the post belongs to the user.
 
     // Let's do a quick check for safety
-    const post = await prisma.post.findUnique({ where: { id: postId } });
-    if (!post) throw new Error("Post not found");
-    // We can assume if they can see it they can edit it (based on dashboard query), 
-    // but better to check if we had userId on post. 
-    // The previous code didn't strictly link post to user in the query inside action, 
-    // but let's assume valid access for now or check against user's posts if relation exists.
-    // The dashboard query filters by session.user.email -> user -> posts.
-
-    await prisma.post.update({
-        where: { id: postId },
+    // Precise ownership check by including userId in the query
+    const result = await prisma.post.updateMany({
+        where: { id: postId, userId: session.user.id },
         data: { content: newContent }
     });
+
+    if (result.count === 0) {
+        throw new Error("Post not found or unauthorized");
+    }
 
     revalidatePath("/dashboard");
 }
@@ -243,8 +241,10 @@ export async function regeneratePostAction(postId: string, selectedText: string,
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const post = await prisma.post.findUnique({ where: { id: postId } });
-    if (!post) throw new Error("Post not found");
+    const post = await prisma.post.findUnique({
+        where: { id: postId, userId: session.user.id }
+    });
+    if (!post) throw new Error("Post not found or unauthorized");
 
     const newContent = await regeneratePostContent(
         post.content,
@@ -254,7 +254,7 @@ export async function regeneratePostAction(postId: string, selectedText: string,
     );
 
     await prisma.post.update({
-        where: { id: postId },
+        where: { id: postId, userId: session.user.id },
         data: { content: newContent }
     });
 
