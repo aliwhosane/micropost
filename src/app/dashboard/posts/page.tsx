@@ -27,6 +27,7 @@ export default async function PostsPage() {
     const failedPosts = posts.filter((p: any) => p.status === "FAILED");
     const twitterPosts = posts.filter((p: any) => p.platform === "TWITTER");
     const linkedinPosts = posts.filter((p: any) => p.platform === "LINKEDIN");
+    const threadsPosts = posts.filter((p: any) => p.platform === "THREADS");
 
     return (
         <div className="space-y-6">
@@ -43,6 +44,9 @@ export default async function PostsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="linkedin" className="flex items-center gap-2">
                         <span className="text-[#0077b5]">in</span> LinkedIn
+                    </TabsTrigger>
+                    <TabsTrigger value="threads" className="flex items-center gap-2">
+                        <span className="text-black dark:text-white">To</span> Threads
                     </TabsTrigger>
                 </TabsList>
 
@@ -169,6 +173,48 @@ export default async function PostsPage() {
                             <div className="space-y-4">
                                 {linkedinPosts.filter((p: any) => p.status === "FAILED").map((post: any) => (
                                     <PostCard key={post.id} {...post} platform="LINKEDIN" topic={post.topic || "General"} />
+                                ))}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                </TabsContent>
+
+                {/* THREADS VIEW */}
+                <TabsContent value="threads" className="space-y-4">
+                    <Tabs defaultValue="all_status">
+                        <TabsList>
+                            <TabsTrigger value="all_status">All Threads</TabsTrigger>
+                            <TabsTrigger value="pending">Pending</TabsTrigger>
+                            <TabsTrigger value="published">Published</TabsTrigger>
+                            <TabsTrigger value="failed">Failed</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="all_status" className="mt-4">
+                            <div className="space-y-4">
+                                {threadsPosts.map((post: any) => (
+                                    <PostCard key={post.id} {...post} platform="THREADS" topic={post.topic || "General"} />
+                                ))}
+                                {threadsPosts.length === 0 && <p className="text-center py-8 text-on-surface-variant">No Threads posts found.</p>}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="pending" className="mt-4">
+                            <div className="space-y-4">
+                                {threadsPosts.filter((p: any) => p.status === "PENDING" || p.status === "DRAFT").map((post: any) => (
+                                    <PostCard key={post.id} {...post} platform="THREADS" topic={post.topic || "General"} />
+                                ))}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="published" className="mt-4">
+                            <div className="space-y-4">
+                                {threadsPosts.filter((p: any) => p.status === "PUBLISHED").map((post: any) => (
+                                    <PostCard key={post.id} {...post} platform="THREADS" topic={post.topic || "General"} />
+                                ))}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="failed" className="mt-4">
+                            <div className="space-y-4">
+                                {threadsPosts.filter((p: any) => p.status === "FAILED").map((post: any) => (
+                                    <PostCard key={post.id} {...post} platform="THREADS" topic={post.topic || "General"} />
                                 ))}
                             </div>
                         </TabsContent>

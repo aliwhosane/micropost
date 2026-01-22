@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Slider } from "@/components/ui/Slider";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/Card";
 import { SocialConnection } from "@/components/settings/SocialConnection";
-import { Linkedin, Twitter, Save, AlertCircle, Zap, Shield, Wand2 } from "lucide-react";
+import { Linkedin, Twitter, Save, AlertCircle, Zap, Shield, Wand2, AtSign } from "lucide-react";
 import { AnalyzeButton } from "@/components/settings/AnalyzeButton";
 import { PricingCard } from "@/components/settings/PricingCard";
 import { FormSlider } from "@/components/settings/FormSlider";
@@ -21,7 +21,7 @@ export default async function SettingsPage() {
 
     if (!user) return <div>User not found</div>;
 
-    const prefs = user.preferences || { postsPerDay: 1, twitterPostsPerDay: 1, linkedinPostsPerDay: 1, styleSample: "", linkedinConnected: false, twitterConnected: false };
+    const prefs = (user.preferences as any) || { postsPerDay: 1, twitterPostsPerDay: 1, linkedinPostsPerDay: 1, threadsPostsPerDay: 1, styleSample: "", linkedinConnected: false, twitterConnected: false, threadsConnected: false };
 
     return (
         <div className="max-w-7xl mx-auto pb-20 space-y-12">
@@ -90,6 +90,17 @@ export default async function SettingsPage() {
                                                 icon={<Linkedin className="h-4 w-4 fill-current text-[#0077b5]" />}
                                                 description="Maximum daily professional posts."
                                             />
+
+                                            {/* Threads Slider */}
+                                            <FormSlider
+                                                name="threadsPostsPerDay"
+                                                defaultValue={prefs.threadsPostsPerDay}
+                                                max={10}
+                                                step={1}
+                                                label="Threads"
+                                                icon={<AtSign className="h-4 w-4 text-on-surface" />}
+                                                description="Maximum daily threads."
+                                            />
                                         </div>
                                     </div>
 
@@ -157,6 +168,10 @@ export default async function SettingsPage() {
                                 <SocialConnection
                                     provider="twitter"
                                     isConnected={user.accounts.some((a: any) => a.provider === "twitter")}
+                                />
+                                <SocialConnection
+                                    provider="threads"
+                                    isConnected={user.accounts.some((a: any) => a.provider === "threads")}
                                 />
                             </CardContent>
                         </Card>

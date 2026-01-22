@@ -107,11 +107,13 @@ model Preferences {
   postsPerDay         Int @default(1) // Deprecated
   twitterPostsPerDay  Int @default(1)
   linkedinPostsPerDay Int @default(1)
+  threadsPostsPerDay  Int @default(1)
 
   styleSample String? // Large text field
 
   linkedinConnected Boolean @default(false)
   twitterConnected  Boolean @default(false)
+  threadsConnected  Boolean @default(false)
 
   updatedAt DateTime @updatedAt
 }

@@ -1,4 +1,4 @@
-import { Linkedin, Twitter, Clock, LucideIcon } from "lucide-react";
+import { Linkedin, Twitter, Clock, LucideIcon, AtSign } from "lucide-react";
 
 interface PostCardHeaderProps {
     platform: string;
@@ -17,8 +17,8 @@ export function PostCardHeader({
     scheduledFor,
     isRegenerating
 }: PostCardHeaderProps) {
-    const PlatformIcon: LucideIcon = platform === "LINKEDIN" ? Linkedin : Twitter;
-    const platformColor = platform === "LINKEDIN" ? "text-[#0077b5]" : "text-[#1DA1F2]";
+    const PlatformIcon: LucideIcon = platform === "LINKEDIN" ? Linkedin : platform === "THREADS" ? AtSign : Twitter;
+    const platformColor = platform === "LINKEDIN" ? "text-[#0077b5]" : platform === "THREADS" ? "text-black dark:text-white" : "text-[#1DA1F2]";
 
     return (
         <div className="flex items-center justify-between w-full">

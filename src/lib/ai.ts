@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 interface GeneratePostParams {
     topics: string[];
     styleSample?: string;
-    platform: "LINKEDIN" | "TWITTER";
+    platform: "LINKEDIN" | "TWITTER" | "THREADS";
     topicAttributes?: {
         name: string;
         notes?: string;
@@ -15,7 +15,7 @@ interface GeneratePostParams {
 }
 
 export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts }: GeneratePostParams): Promise<{ content: string; topic: string }> {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     // Select a random topic from the string name array for fallback/legacy compatibility,
     // but try to find its matching attributes.
@@ -33,10 +33,10 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     
     Constraints:
     - For Twitter: 
-        - Max 280 characters.
+        - Max 260 characters (including hashtags).
         - Write like a real person, not a bot. Avoid "marketing speak" or robotic sentence structures.
         - Be direct, punchy, and conversational.
-        - Use 1-2 relevant hashtags.
+        - Identify and use the top 2-4 most popular and relevant hashtags for this topic. Avoid generic tags; prefer high-traffic niche tags.
     - For LinkedIn:
         - Write in a natural, human tone. Avoid corporate jargon, buzzwords, or robotic phrasing.
         - Include a SPECIFIC real-life example, story, or anecdote related to the topic to illustrate the point.
@@ -44,13 +44,20 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
         - Provide a concrete, valuable insight or actionable takeaway that the reader can use immediately.
         - Use clean formatting (bullet points, short paragraphs) to make it highly readable.
         - DO NOT use Markdown formatting like **bold** or *italics* as they do not render on LinkedIn. Use plain text or CAPITALIZATION for emphasis if needed.
-        - 1-3 relevant hashtags.
+        - Identify and use the top 2-4 most popular and relevant hashtags for this topic. Avoid generic tags; prefer high-traffic niche tags.
         - Start with a strong, engaging hook.
+    - For Threads:
+        - Write in a casual, conversational, and "in-the-moment" tone.
+        - Focus on starting a discussion. Ask an open-ended question or share a relatable thought.
+        - Keep it concise but not as short as a Tweet (up to 400 characters).
+        - Avoid hashtags completely, or use maximum 1 if absolutely necessary for discovery (Threads culture dislikes hashtags).
+        - Be visual in description if telling a story.
+        - No "marketing speak". Just a human sharing a thought.
     - Do NOT include "Here is a post" or quotes. Just output the content.
     - CRITICAL: MIMIC the provided writing style closely. If the sample is casual/witty, be casual/witty. If it's formal/academic, be formal/academic.
     - CRITICAL: If the user has provided a STANCE or NOTES, you MUST reflect that specific perspective. Do not write a generic post.
     
-    Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : "a Tweet"} about ${topicName}.
+    Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : platform === "THREADS" ? "an engaging Threads post" : "a Tweet"} about ${topicName}.
   `;
 
     try {
@@ -69,7 +76,7 @@ export async function checkStyleMatch(sample: string, generated: string) {
 }
 
 export async function generateStyleDescription(texts: string[]): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const prompt = `
     Analyze the following social media posts and create a concise description of the writing style.
@@ -94,7 +101,7 @@ export async function generateStyleDescription(texts: string[]): Promise<string>
 
 
 export async function regeneratePostContent(currentContent: string, selectedText: string, instruction: string, platform: string): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const prompt = `
     You are an expert social media editor.

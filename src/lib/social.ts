@@ -7,7 +7,11 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
     // 1. Get User's Account Token
     // We search for the specific provider account linked to this user.
-    const provider = post.platform === "TWITTER" ? "twitter" : "linkedin";
+    // We search for the specific provider account linked to this user.
+    let provider = "";
+    if (post.platform === "TWITTER") provider = "twitter";
+    else if (post.platform === "LINKEDIN") provider = "linkedin";
+    else if (post.platform === "THREADS") provider = "threads";
 
     const account = await prisma.account.findFirst({
         where: {
@@ -104,12 +108,89 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 }
             );
             console.log("Successfully posted to LinkedIn");
+        } else if (provider === "threads") {
+            // Threads API publishing (2 steps)
+            const accessToken = account.access_token;
+            if (!accessToken) throw new Error("No access token available for Threads");
+
+            // Step 1: Create a media container
+            const createContainerResponse = await axios.post(
+                "https://graph.threads.net/v1.0/me/threads",
+                {
+                    media_type: "TEXT",
+                    text: post.content,
+                },
+                {
+                    params: { access_token: accessToken }
+                }
+            );
+
+            const creationId = createContainerResponse.data.id;
+
+            // Step 1.5: Wait for container to be ready (FINISHED status)
+            let attempts = 0;
+            const maxAttempts = 10;
+            let isReady = false;
+
+            while (attempts < maxAttempts && !isReady) {
+                attempts++;
+
+                // Short wait between checks (1s)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                try {
+                    const statusResponse = await axios.get(
+                        `https://graph.threads.net/v1.0/${creationId}`,
+                        {
+                            params: {
+                                fields: "status,error_message",
+                                access_token: accessToken
+                            }
+                        }
+                    );
+
+                    const status = statusResponse.data.status;
+                    console.log(`Threads container ${creationId} status: ${status}`);
+
+                    if (status === "FINISHED") {
+                        isReady = true;
+                    } else if (status === "ERROR" || status === "EXPIRED") {
+                        throw new Error(`Threads container creation failed: ${statusResponse.data.error_message || status}`);
+                    }
+                    // If IN_PROGRESS or PUBLISHING, loop again
+                } catch (statusError) {
+                    console.warn(`Error checking Threads container status (attempt ${attempts}):`, statusError);
+                    // Continue waiting if transient error, or maybe break if 4xx? 
+                    // Let's assume transient and continue, allow polling to timeout if persistent
+                }
+            }
+
+            if (!isReady) {
+                throw new Error("Timeout waiting for Threads container to be ready");
+            }
+
+            // Step 2: Publish the container
+            await axios.post(
+                "https://graph.threads.net/v1.0/me/threads_publish",
+                {
+                    creation_id: creationId,
+                },
+                {
+                    params: { access_token: accessToken }
+                }
+            );
+            console.log("Successfully posted to Threads");
         }
 
         return { success: true, mocked: false };
 
     } catch (error) {
-        console.error(`Failed to post to ${provider}:`, error);
+        if (axios.isAxiosError(error)) {
+            console.error(`Failed to post to ${provider}. Status: ${error.response?.status}`);
+            console.error("Error data:", JSON.stringify(error.response?.data, null, 2));
+        } else {
+            console.error(`Failed to post to ${provider}:`, error);
+        }
         // For now, if it fails (e.g. expired token), we return false so status stays APPROVED or moves to FAILED
         return { success: false, error };
     }

@@ -35,6 +35,7 @@ export async function POST(req: Request) {
             - Use short paragraphs and "broetry" formatting for readability.
             - Include strong hooks and clear takeaways.
             - Add a question at the end to drive engagement.
+            - Identify and use the top 2-4 most popular and relevant hashtags for this topic. Avoid generic tags; prefer high-traffic niche tags.
             
             Return the response in strict JSON format with this structure:
             {

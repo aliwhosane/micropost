@@ -40,8 +40,9 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         // Determine platforms. If none connected, default to Twitter for demo.
         // In real app maybe skip or notify.
-        const platforms: ("LINKEDIN" | "TWITTER")[] = [];
+        const platforms: ("LINKEDIN" | "TWITTER" | "THREADS")[] = [];
         if (user.accounts.some((a: any) => a.provider === "linkedin")) platforms.push("LINKEDIN");
+        if (user.accounts.some((a: any) => a.provider === "threads")) platforms.push("THREADS");
         if (user.accounts.some((a: any) => a.provider === "twitter")) platforms.push("TWITTER");
         if (platforms.length === 0) platforms.push("TWITTER"); // Fallback
 
@@ -125,6 +126,46 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                     });
                 } catch (err) {
                     console.error(`Failed to generate LinkedIn post for user ${user.id}:`, err);
+                }
+            }
+        }
+
+        // Threads Generation Loop
+        const threadsCount = (user.preferences as any).threadsPostsPerDay || 0;
+        if (user.accounts.some((a: any) => a.provider === "threads")) {
+            for (let i = 0; i < threadsCount; i++) {
+                try {
+                    const { content, topic } = await generateSocialPost({
+                        topics: topicNames,
+                        styleSample: styleSample || undefined,
+                        platform: "THREADS",
+                        topicAttributes: user.topics.map((t: any) => ({
+                            name: t.name,
+                            notes: t.notes,
+                            stance: t.stance
+                        })),
+                        temporaryThoughts,
+                    });
+
+                    // Save to Database
+                    const post = await prisma.post.create({
+                        data: {
+                            userId: user.id,
+                            content,
+                            platform: "THREADS",
+                            topic: topic,
+                            status: "PENDING",
+                        },
+                    });
+
+                    generatedPosts.push({
+                        id: post.id,
+                        content: post.content,
+                        platform: post.platform!,
+                        topic: post.topic || topic,
+                    });
+                } catch (err) {
+                    console.error(`Failed to generate Threads post for user ${user.id}:`, err);
                 }
             }
         }

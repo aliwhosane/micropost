@@ -102,6 +102,7 @@ export async function updatePreferences(formData: FormData) {
     const postsPerDay = parseInt(formData.get("postsPerDay") as string); // Legacy support
     const twitterPostsPerDay = parseInt(formData.get("twitterPostsPerDay") as string);
     const linkedinPostsPerDay = parseInt(formData.get("linkedinPostsPerDay") as string);
+    const threadsPostsPerDay = parseInt(formData.get("threadsPostsPerDay") as string);
     const styleSample = formData.get("styleSample") as string;
 
     const user = await prisma.user.findUnique({
@@ -119,6 +120,7 @@ export async function updatePreferences(formData: FormData) {
                 postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
                 twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
                 linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
+                threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
                 styleSample,
             },
         });
@@ -129,6 +131,7 @@ export async function updatePreferences(formData: FormData) {
                 postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
                 twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
                 linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
+                threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
                 styleSample,
             },
         });

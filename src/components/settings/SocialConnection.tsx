@@ -1,12 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/Button";
-import { Linkedin, Twitter, Check } from "lucide-react";
+import { Linkedin, Twitter, Check, AtSign } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface SocialConnectionProps {
-    provider: "twitter" | "linkedin";
+    provider: "twitter" | "linkedin" | "threads";
     isConnected: boolean;
 }
 
@@ -27,9 +27,11 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
     };
 
     const isTwitter = provider === "twitter";
-    const brandColor = isTwitter ? "text-[#1DA1F2]" : "text-[#0077b5]";
-    const brandBg = isTwitter ? "bg-[#1DA1F2]/10" : "bg-[#0077b5]/10";
-    const label = isTwitter ? "Twitter / X" : "LinkedIn";
+    const isThreads = provider === "threads";
+
+    const brandColor = isTwitter ? "text-[#1DA1F2]" : isThreads ? "text-black dark:text-white" : "text-[#0077b5]";
+    const brandBg = isTwitter ? "bg-[#1DA1F2]/10" : isThreads ? "bg-black/5 dark:bg-white/10" : "bg-[#0077b5]/10";
+    const label = isTwitter ? "Twitter / X" : isThreads ? "Threads" : "LinkedIn";
 
     return (
         <div className={cn(
@@ -40,7 +42,7 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
         )}>
             <div className="flex items-center gap-4">
                 <div className={cn("p-2.5 rounded-lg", brandBg, brandColor)}>
-                    {isTwitter ? <Twitter className="h-5 w-5 fill-current" /> : <Linkedin className="h-5 w-5 fill-current" />}
+                    {isTwitter ? <Twitter className="h-5 w-5 fill-current" /> : isThreads ? <AtSign className="h-5 w-5" /> : <Linkedin className="h-5 w-5 fill-current" />}
                 </div>
                 <div>
                     <div className="font-semibold text-sm text-on-surface">{label}</div>

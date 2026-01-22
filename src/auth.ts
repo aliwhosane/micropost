@@ -63,5 +63,59 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 },
             },
         }),
+        {
+            id: "threads",
+            name: "Threads",
+            type: "oauth",
+            authorization: {
+                url: "https://threads.net/oauth/authorize",
+                params: {
+                    scope: "threads_basic threads_content_publish",
+                    response_type: "code",
+                },
+            },
+            token: {
+                url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL}/api/auth/threads/token`,
+            },
+            client: {
+                token_endpoint_auth_method: "client_secret_post",
+            },
+            userinfo: {
+                url: "https://graph.threads.net/me",
+                params: {
+                    fields: "id,username,name,picture_url",
+                },
+            },
+            clientId: process.env.AUTH_THREADS_ID,
+            clientSecret: process.env.AUTH_THREADS_SECRET,
+            profile(profile: any) {
+                return {
+                    id: profile.id,
+                    name: profile.username || profile.name,
+                    image: profile.picture_url,
+                };
+            },
+        },
     ],
+    callbacks: {
+        ...authConfig.callbacks,
+        async signIn({ user, account }) {
+            if (account?.provider === "threads" && account.access_token) {
+                try {
+                    // Exchange short-lived token for long-lived token (60 days)
+                    const response = await fetch(`https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${process.env.AUTH_THREADS_SECRET}&access_token=${account.access_token}`);
+                    const data = await response.json();
+
+                    if (data.access_token) {
+                        console.log("Exchanged Threads token for long-lived token");
+                        (account as any).access_token = data.access_token;
+                        (account as any).expires_at = Math.floor(Date.now() / 1000) + (data.expires_in || 5184000);
+                    }
+                } catch (e) {
+                    console.error("Failed to exchange Threads token", e);
+                }
+            }
+            return true;
+        },
+    },
 });
