@@ -42,6 +42,21 @@ export async function POST(req: Request) {
 
     const eventType = evt.type;
 
+    // Filter by product ID to avoid processing events from other products
+    const ALLOWED_PRODUCT_IDS = [
+        "585a7590-d6dc-4bd5-b2ce-df7d29ae57ce", // Monthly Membership
+        "6f0dcd25-6b07-4cac-bb10-151b03435bbb", // Lifetime Access
+    ];
+
+    const data = evt.data as any;
+    // Check if the event has a product_id and if it matches our allowed list.
+    // We safely access product_id because other products might have different structures.
+    if (data && data.product_id && !ALLOWED_PRODUCT_IDS.includes(data.product_id)) {
+        console.log(`[Polar Webhook] Ignoring event ${eventType} for unrelated product: ${data.product_id}`);
+        return new Response("", { status: 200 });
+    }
+
+
     if (eventType === "subscription.created" || eventType === "subscription.updated") {
         const subscription = evt.data;
         const email = subscription.user.email; // Verify where email is located in payload

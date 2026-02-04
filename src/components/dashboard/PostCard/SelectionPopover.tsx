@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/Button";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 interface SelectionPopoverProps {
     top: number;
     left: number;
+    selectedText: string;
     instruction: string;
     isRegenerating: boolean;
     onClose: () => void;
@@ -14,12 +16,24 @@ interface SelectionPopoverProps {
 export function SelectionPopover({
     top,
     left,
+    selectedText,
     instruction,
     isRegenerating,
     onClose,
     onInstructionChange,
     onRegenerate
 }: SelectionPopoverProps) {
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(selectedText);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy text: ", err);
+        }
+    };
     return (
         <div
             className="selection-popover absolute z-50 bg-surface shadow-xl rounded-lg p-3 border border-outline-variant w-72 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200"
@@ -44,6 +58,15 @@ export function SelectionPopover({
                 isLoading={isRegenerating}
             >
                 <Sparkles className="h-3 w-3" /> Regenerate
+            </Button>
+            <Button
+                size="sm"
+                variant="outlined"
+                className="text-xs h-7 w-full flex justify-center gap-2 border-outline-variant text-on-surface hover:bg-surface-variant"
+                onClick={handleCopy}
+            >
+                {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                {isCopied ? "Copied" : "Copy Selection"}
             </Button>
         </div>
     );

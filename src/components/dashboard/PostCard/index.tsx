@@ -102,6 +102,16 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         setIsEditing(false);
     };
 
+    // Character Count Logic
+    const currentContent = isEditing ? editedContent : content;
+    const charCount = currentContent.length;
+    let limit = 10000; // Default high limit
+    if (platform === "TWITTER") limit = 275;
+    if (platform === "THREADS") limit = 490;
+
+    const isValid = charCount <= limit;
+    const isOverLimit = !isValid;
+
     return (
         <div ref={cardRef} className="relative flex flex-col p-5 rounded-xl bg-surface-variant/20 border border-outline-variant/20 gap-4 hover:border-outline-variant/40 transition-colors">
 
@@ -110,6 +120,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                 <SelectionPopover
                     top={selection.top}
                     left={selection.left}
+                    selectedText={selection.text}
                     instruction={instruction}
                     isRegenerating={actionStatus === "REGENERATING"}
                     onClose={() => setSelection(null)}
@@ -133,7 +144,10 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                 {isEditing ? (
                     <textarea
                         ref={textareaRef}
-                        className="w-full p-3 rounded-lg bg-surface border border-outline-variant text-base text-on-surface focus:outline-none focus:ring-2 focus:ring-primary font-medium leading-relaxed resize-none shadow-inner overflow-hidden"
+                        className={`w-full p-3 rounded-lg bg-surface border text-base text-on-surface focus:outline-none focus:ring-2 font-medium leading-relaxed resize-none shadow-inner overflow-hidden ${isOverLimit
+                            ? "border-error focus:ring-error"
+                            : "border-outline-variant focus:ring-primary"
+                            }`}
                         value={editedContent}
                         onChange={(e) => setEditedContent(e.target.value)}
                         disabled={actionStatus === "SAVING"}
@@ -159,6 +173,13 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                         ) : (
                             content
                         )}
+                    </div>
+                )}
+
+                {/* Character Count Display */}
+                {(platform === "TWITTER" || platform === "THREADS") && (
+                    <div className={`flex justify-end mt-1 text-xs font-medium ${isOverLimit ? "text-error" : "text-on-surface-variant/70"}`}>
+                        {charCount} / {limit}
                     </div>
                 )}
             </div>
@@ -188,6 +209,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onToggleSchedule={() => setIsScheduling(!isScheduling)}
+                    isValid={isValid}
                 />
             </div>
         </div>

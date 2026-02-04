@@ -12,6 +12,7 @@ interface PostCardActionsProps {
     onApprove: () => void;
     onReject: () => void;
     onToggleSchedule: () => void;
+    isValid?: boolean;
 }
 
 export function PostCardActions({
@@ -24,9 +25,10 @@ export function PostCardActions({
     onSave,
     onApprove,
     onReject,
-    onToggleSchedule
+    onToggleSchedule,
+    isValid = true
 }: PostCardActionsProps) {
-    if (status === "PENDING" || status === "DRAFT") {
+    if (status === "PENDING" || status === "DRAFT" || status === "FAILED") {
         if (isEditing) {
             return (
                 <div className="flex items-center gap-2">
@@ -79,15 +81,25 @@ export function PostCardActions({
                     <button
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-l-md hover:bg-black/10 transition-colors border-r border-emerald-500 disabled:opacity-70"
                         onClick={onApprove}
-                        disabled={actionStatus === "APPROVING"}
+                        disabled={actionStatus === "APPROVING" || !isValid}
                     >
-                        <Check className="h-3.5 w-3.5" />
-                        <span>Approve</span>
+                        {status === "FAILED" ? (
+                            <>
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Retry</span>
+                            </>
+                        ) : (
+                            <>
+                                <Check className="h-3.5 w-3.5" />
+                                <span>Approve</span>
+                            </>
+                        )}
                     </button>
                     <button
-                        className="px-2 py-1.5 rounded-r-md text-emerald-100 hover:text-white hover:bg-black/10 transition-colors"
+                        className="px-2 py-1.5 rounded-r-md text-emerald-100 hover:text-white hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={onToggleSchedule}
                         title="Schedule for later"
+                        disabled={!isValid}
                     >
                         <CalendarIcon className="h-3.5 w-3.5" />
                     </button>

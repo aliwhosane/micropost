@@ -184,14 +184,21 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
         return { success: true, mocked: false };
 
-    } catch (error) {
+    } catch (error: any) {
+        // Detailed error logging
+        console.error(`Failed to post to ${provider}.`);
+
         if (axios.isAxiosError(error)) {
-            console.error(`Failed to post to ${provider}. Status: ${error.response?.status}`);
-            console.error("Error data:", JSON.stringify(error.response?.data, null, 2));
+            console.error(`Axios Status: ${error.response?.status}`);
+            console.error("Axios Response Data:", JSON.stringify(error.response?.data, null, 2));
         } else {
-            console.error(`Failed to post to ${provider}:`, error);
+            // Likely TwitterApi error
+            console.error("Error Object:", error);
+            if (error.code) console.error("Error Code:", error.code);
+            if (error.data) console.error("Error Data:", JSON.stringify(error.data, null, 2));
+            if (error.errors) console.error("Inner Errors:", JSON.stringify(error.errors, null, 2));
         }
-        // For now, if it fails (e.g. expired token), we return false so status stays APPROVED or moves to FAILED
+
         return { success: false, error };
     }
 }

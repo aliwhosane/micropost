@@ -26,6 +26,25 @@ export default function ToolsPage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {/* Tool 0: Idea to Posts (New) */}
+                <Link href="/tools/idea-to-post" className="group">
+                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-amber-500/50 transition-all hover:shadow-lg hover:shadow-amber-500/5">
+                        <CardHeader>
+                            <div className="h-12 w-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600 mb-4 group-hover:scale-110 transition-transform">
+                                <Sparkles className="h-6 w-6" />
+                            </div>
+                            <CardTitle className="text-2xl group-hover:text-amber-600 transition-colors">Idea to Posts</CardTitle>
+                            <CardDescription>
+                                Turn one raw thought into a week of content. Generate posts for LinkedIn, Twitter, and Threads.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button variant="text" className="pl-0 group-hover:text-amber-600">
+                                Generate Content <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </Link>
                 {/* Tool 1: LinkedIn Previewer */}
                 <Link href="/tools/linkedin-previewer" className="group">
                     <Card className="h-full border-outline-variant/40 bg-surface hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5">

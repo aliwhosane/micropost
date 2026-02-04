@@ -20,7 +20,7 @@ export default async function PostsPage() {
 
     if (!user) return <div>User not found</div>;
 
-    const posts = user.posts || [];
+    const posts = (user.posts || []).filter((p: any) => p.status !== "REJECTED");
     const pendingPosts = posts.filter((p: any) => p.status === "PENDING" || p.status === "DRAFT");
     const publishedPosts = posts.filter((p: any) => p.status === "PUBLISHED");
     const approvedPosts = posts.filter((p: any) => p.status === "APPROVED"); // Ready to publish but maybe failed or just approved
