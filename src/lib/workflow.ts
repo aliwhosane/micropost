@@ -2,10 +2,26 @@ import { prisma } from "@/lib/db";
 import { generateSocialPost } from "@/lib/ai";
 import { sendDailyDigest } from "@/lib/email";
 
-export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string) {
+export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string, manualFramework?: string, targetPlatforms?: string[]) {
     console.log("Starting daily generation workflow...");
 
+    // Helper to pick a weighted random framework
+    const selectRandomFramework = () => {
+        const rand = Math.random();
+        // 40% None (Freeform)
+        if (rand < 0.40) return undefined;
+        // 15% PAS
+        if (rand < 0.55) return "PAS";
+        // 15% AIDA
+        if (rand < 0.70) return "AIDA";
+        // 15% Storytelling
+        if (rand < 0.85) return "STORYTELLING";
+        // 15% Contrarian
+        return "CONTRARIAN";
+    };
+
     // 1. Fetch users with preferences and enabled topics
+    // CRITICAL: Strict isolation - if targetUserId is provided, we MUST only fetch that user.
     const users = await prisma.user.findMany({
         where: {
             ...(targetUserId ? { id: targetUserId } : {}),
@@ -27,7 +43,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
         },
     });
 
-    console.log(`Found ${users.length} eligible users.`);
+    console.log(`Found ${users.length} eligible users. Target User ID: ${targetUserId || "ALL"}`);
 
     const results = [];
 
@@ -40,11 +56,21 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         // Determine platforms. If none connected, default to Twitter for demo.
         // In real app maybe skip or notify.
-        const platforms: ("LINKEDIN" | "TWITTER" | "THREADS")[] = [];
-        if (user.accounts.some((a: any) => a.provider === "linkedin")) platforms.push("LINKEDIN");
-        if (user.accounts.some((a: any) => a.provider === "threads")) platforms.push("THREADS");
-        if (user.accounts.some((a: any) => a.provider === "twitter")) platforms.push("TWITTER");
-        if (platforms.length === 0) platforms.push("TWITTER"); // Fallback
+        const availablePlatforms: string[] = [];
+        if (user.accounts.some((a: any) => a.provider === "linkedin")) availablePlatforms.push("LINKEDIN");
+        if (user.accounts.some((a: any) => a.provider === "threads")) availablePlatforms.push("THREADS");
+        if (user.accounts.some((a: any) => a.provider === "twitter")) availablePlatforms.push("TWITTER");
+        if (availablePlatforms.length === 0) availablePlatforms.push("TWITTER"); // Fallback
+
+        // Should function helper to check if we should run for this platform
+        const shouldRunFor = (platform: string) => {
+            // If manual target platforms are provided, strictly adhere to them
+            if (targetPlatforms && targetPlatforms.length > 0) {
+                return targetPlatforms.includes(platform);
+            }
+            // Otherwise run if available (default daily behavior)
+            return availablePlatforms.includes(platform);
+        }
 
         const generatedPosts = [];
 
@@ -52,9 +78,12 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         // Twitter Generation Loop
         const twitterCount = user.preferences.twitterPostsPerDay || 0;
-        if (user.accounts.some((a: any) => a.provider === "twitter")) {
+        if (shouldRunFor("TWITTER") && user.accounts.some((a: any) => a.provider === "twitter")) {
             for (let i = 0; i < twitterCount; i++) {
                 try {
+                    // Use manual framework if provided (manual generation), otherwise randomize
+                    const currentFramework = manualFramework || selectRandomFramework();
+
                     const { content, topic } = await generateSocialPost({
                         topics: topicNames,
                         styleSample: styleSample || undefined,
@@ -65,6 +94,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        framework: currentFramework
                     });
 
                     // Save to Database
@@ -92,9 +122,11 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         // LinkedIn Generation Loop
         const linkedinCount = user.preferences.linkedinPostsPerDay || 0;
-        if (user.accounts.some((a: any) => a.provider === "linkedin")) {
+        if (shouldRunFor("LINKEDIN") && user.accounts.some((a: any) => a.provider === "linkedin")) {
             for (let i = 0; i < linkedinCount; i++) {
                 try {
+                    const currentFramework = manualFramework || selectRandomFramework();
+
                     const { content, topic } = await generateSocialPost({
                         topics: topicNames,
                         styleSample: styleSample || undefined,
@@ -105,6 +137,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        framework: currentFramework
                     });
 
                     // Save to Database
@@ -132,9 +165,11 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         // Threads Generation Loop
         const threadsCount = (user.preferences as any).threadsPostsPerDay || 0;
-        if (user.accounts.some((a: any) => a.provider === "threads")) {
+        if (shouldRunFor("THREADS") && user.accounts.some((a: any) => a.provider === "threads")) {
             for (let i = 0; i < threadsCount; i++) {
                 try {
+                    const currentFramework = manualFramework || selectRandomFramework();
+
                     const { content, topic } = await generateSocialPost({
                         topics: topicNames,
                         styleSample: styleSample || undefined,
@@ -145,6 +180,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        framework: currentFramework
                     });
 
                     // Save to Database

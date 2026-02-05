@@ -149,7 +149,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
     // Fetch the post first to get details for publishing
     const post = await prisma.post.findUnique({
         where: { id: postId, userId: session.user.id },
-    });
+    }) as any;
 
     if (!post) throw new Error("Post not found");
 
@@ -180,6 +180,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
             userId: session.user.id!,
             content: post.content,
             platform: post.platform!,
+            imageUrl: post.imageUrl
         });
 
         if (result.success) {
@@ -188,7 +189,8 @@ export async function approvePost(postId: string, scheduledAt?: string) {
                 data: {
                     status: "PUBLISHED",
                     publishedAt: new Date(),
-                }
+                    imageUrl: null // Cleanup heavy base64 data to save DB space
+                } as any
             });
         } else {
             // Optionally mark as FAILED
@@ -316,10 +318,22 @@ export async function triggerManualGeneration(formData?: FormData) {
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     let temporaryThoughts;
+    let framework;
+    let platforms: string[] | undefined;
+
     if (formData) {
         temporaryThoughts = formData.get("thoughts") as string;
+        framework = formData.get("framework") as string;
+        const platformsJson = formData.get("platforms") as string;
+        if (platformsJson) {
+            try {
+                platforms = JSON.parse(platformsJson);
+            } catch (e) {
+                console.error("Failed to parse platforms", e);
+            }
+        }
     }
 
-    await runDailyGeneration(session.user.id, temporaryThoughts);
+    await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms);
     revalidatePath("/dashboard");
 }

@@ -13,6 +13,7 @@ interface PostCardActionsProps {
     onReject: () => void;
     onToggleSchedule: () => void;
     isValid?: boolean;
+    isCompact?: boolean;
 }
 
 export function PostCardActions({
@@ -26,8 +27,44 @@ export function PostCardActions({
     onApprove,
     onReject,
     onToggleSchedule,
-    isValid = true
+    isValid = true,
+    isCompact = false
 }: PostCardActionsProps) {
+    // In Compact mode, we only show minimal status info or primary action if needed
+    // But design-wise, it's cleaner to just show status text or nothing, and let user expand to act.
+    // However, fast approval might be desired. Let's keep Approve/Reject accessible but smaller?
+    // For now, let's hide complex actions in compact mode to keep it clean, 
+    // OR we can just show the Approve button slightly differently.
+
+    // DECISION: In compact mode, we hide the heavy buttons to save space, but show a "Status" pill if not pending.
+    // If PENDING, we might want to allow quick approve.
+
+    if (isCompact) {
+        if (status === "PENDING" || status === "DRAFT" || status === "FAILED") {
+            return (
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onApprove(); }}
+                        disabled={actionStatus === "APPROVING" || !isValid}
+                        className="p-1.5 rounded-md hover:bg-green-500/10 text-green-600 transition-colors"
+                        title="Quick Approve"
+                    >
+                        <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onReject(); }}
+                        disabled={actionStatus === "REJECTING"}
+                        className="p-1.5 rounded-md hover:bg-red-500/10 text-red-600 transition-colors"
+                        title="Quick Reject"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )
+        }
+        return <div className="text-xs font-medium text-on-surface-variant/50 italic">{status}</div>;
+    }
+
     if (status === "PENDING" || status === "DRAFT" || status === "FAILED") {
         if (isEditing) {
             return (
@@ -48,6 +85,7 @@ export function PostCardActions({
                         className="bg-primary hover:bg-primary/90 min-w-[80px]"
                         onClick={onSave}
                         isLoading={actionStatus === "SAVING"}
+                        title="Save (⌘+Enter)"
                     >
                         <Check className="h-3.5 w-3.5" />
                         <span>Save</span>

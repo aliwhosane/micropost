@@ -88,6 +88,8 @@ model Post {
   topic    String?
   status   String  @default("DRAFT") // DRAFT, PENDING, APPROVED, PUBLISHED, FAILED
   platform String? // TWITTER, LINKEDIN, BOTH
+  imageUrl String? // URL or Base64 of attached visual
+
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

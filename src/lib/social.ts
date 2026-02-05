@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { TwitterApi } from "twitter-api-v2";
 import axios from "axios";
 
-export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string }) {
+export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null }) {
     console.log(`Attempting to publish post ${post.id} to ${post.platform}...`);
 
     // 1. Get User's Account Token
@@ -71,7 +71,32 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             if (!accessToken) throw new Error("No access token available for Twitter");
 
             const client = new TwitterApi(accessToken);
-            await client.v2.tweet(post.content);
+
+            let mediaId = undefined;
+            if (post.imageUrl && post.imageUrl.startsWith("data:")) {
+                try {
+                    // Extract base64 (remove data:image/png;base64, prefix)
+                    const base64Data = post.imageUrl.split(",")[1];
+                    const buffer = Buffer.from(base64Data, "base64");
+
+                    // Upload media (v1.1)
+                    const mediaIds = await client.v1.uploadMedia(buffer, { mimeType: 'image/png' });
+                    mediaId = mediaIds;
+                    console.log("Uploaded media to Twitter:", mediaId);
+                } catch (e) {
+                    console.error("Twitter media upload failed", e);
+                    throw e; // Fail the post if media upload fails
+                }
+            }
+
+            if (mediaId) {
+                await client.v2.tweet({
+                    text: post.content,
+                    media: { media_ids: [mediaId] }
+                });
+            } else {
+                await client.v2.tweet(post.content);
+            }
             console.log("Successfully posted to Twitter");
         } else if (provider === "linkedin") {
             // LinkedIn API v2: ugcPosts or shares
@@ -114,12 +139,22 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             if (!accessToken) throw new Error("No access token available for Threads");
 
             // Step 1: Create a media container
+            const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost.vercel.app"}/api/images/${post.id}`;
+
+            const containerParams: any = {
+                text: post.content,
+            };
+
+            if (post.imageUrl) {
+                containerParams.media_type = "IMAGE";
+                containerParams.image_url = publicImageUrl;
+            } else {
+                containerParams.media_type = "TEXT";
+            }
+
             const createContainerResponse = await axios.post(
                 "https://graph.threads.net/v1.0/me/threads",
-                {
-                    media_type: "TEXT",
-                    text: post.content,
-                },
+                containerParams,
                 {
                     params: { access_token: accessToken }
                 }

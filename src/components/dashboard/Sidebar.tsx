@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { signOutAction } from "@/lib/actions";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, PenTool, Sliders, FileText, LogOut, Video, MessageSquare, Linkedin, Youtube, Mail, Sparkles } from "lucide-react";
+import { LayoutDashboard, PenTool, Sliders, FileText, LogOut, Video, MessageSquare, Linkedin, Youtube, Mail, Sparkles, Flame } from "lucide-react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export function Sidebar() {
@@ -13,6 +13,7 @@ export function Sidebar() {
 
     const navigation = [
         { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+        { name: "TrendSurfer", href: "/dashboard/trends", icon: Flame },
         { name: "Posts", href: "/dashboard/posts", icon: FileText },
         { name: "Topics", href: "/dashboard/topics", icon: PenTool },
         { name: "Free Tools", href: "/tools", icon: Sparkles },

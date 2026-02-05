@@ -12,24 +12,88 @@ interface GeneratePostParams {
         stance?: string;
     }[];
     temporaryThoughts?: string;
+    newsContext?: {
+        title: string;
+        summary: string;
+        url: string;
+    };
+    framework?: string;
 }
 
-export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts }: GeneratePostParams): Promise<{ content: string; topic: string }> {
+
+export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts, newsContext, framework }: GeneratePostParams): Promise<{ content: string; topic: string }> {
+
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-    // Select a random topic from the string name array for fallback/legacy compatibility,
-    // but try to find its matching attributes.
-    const topicName = topics[Math.floor(Math.random() * topics.length)];
+    // Select a random topic from the string name array OR use the news context topic if available
+    let topicName = topics[Math.floor(Math.random() * topics.length)];
+
+    // If news context is present, we might want to infer the topic or just use "Current Events"
+    // For now, we'll stick to the random topic selection unless the user specifically overrides, 
+    // BUT we will inject the news context heavily into the prompt.
+
     const attributes = topicAttributes?.find(t => t.name === topicName);
+
+    const VIRAL_FRAMEWORKS: Record<string, string> = {
+        PAS: `
+        FRAMEWORK: PAS (Problem-Agitate-Solution)
+        - Problem: Identify a specific, painful problem the audience faces.
+        - Agitate: Rub salt in the wound. Explain why this problem is annoying, costly, or dangerous.
+        - Solution: Present your insight/takeaway as the clear solution.
+        Structure the post clearly in these three beats.`,
+        AIDA: `
+        FRAMEWORK: AIDA (Attention-Interest-Desire-Action)
+        - Attention: Start with a scroll-stopping hook or shocking statement.
+        - Interest: elaborate with interesting facts or a contrarian viewpoint.
+        - Desire: Show the benefits of a better way (your way).
+        - Action: End with a clear takeaway or question to drive engagement.
+        `,
+        BAB: `
+        FRAMEWORK: BAB (Before-After-Bridge)
+        - Before: Describe the current "bad" state or struggle.
+        - After: Describe the desired "dream" state/outcome.
+        - Bridge: Explain how to get from Before to After (your insight).
+        `,
+        STORYTELLING: `
+        FRAMEWORK: Micro-Storytelling
+        - Hook: Start in the middle of the action.
+        - Conflict: Briefly describe the struggle or challenge.
+        - Resolution: How it was solved.
+        - Lesson: The universal takeaway for the reader.
+        `,
+        CONTRARIAN: `
+        FRAMEWORK: Contrarian/New Truth
+        - Common Belief: State what everyone thinks is true.
+        - The Pivot: "But actually..." or "Unpopular opinion:".
+        - New Truth: Explain why the common belief is wrong and what is actually true.
+        - Proof/Reasoning: Briefly explain why.
+        `
+    };
+
+    const frameworkInstruction = framework ? VIRAL_FRAMEWORKS[framework] : "";
 
     const prompt = `
     You are an expert social media ghostwriter.
     Platform: ${platform}
-    Topic: ${topicName}
+    ${newsContext ? `TOPIC: Trending News Story` : `Topic: ${topicName}`}
     ${attributes?.stance ? `User's Stance/Perspective: ${attributes.stance}` : ""}
     ${attributes?.notes ? `User's Standing Notes: ${attributes.notes}` : ""}
     ${temporaryThoughts ? `CURRENT THOUGHTS (PRIORITY OVERRIDE): "${temporaryThoughts}"` : ""}
     ${styleSample ? `Writing Style to Mimic: ${styleSample}` : "Style: Professional, engaging, and concise."}
+    ${frameworkInstruction ? `\n    STRICT FORMATTING INSTRUCTION: Use the following copywriting framework:\n${frameworkInstruction}\n` : ""}
+
+    ${newsContext ? `
+    CRITICAL CONTEXT - NEWSJACKING MODE:
+    You are writing a post about this trending news story:
+    Title: "${newsContext.title}"
+    Summary: "${newsContext.summary}"
+    Source Information: "${newsContext.url}"
+    
+    Task:
+    - Write a "hot take" or "insightful commentary" on this story.
+    - Do NOT just summarize the news. Add value, opinion, or a question.
+    - Connect it to the user's general niche if possible.
+    ` : ""}
     
     Constraints:
     - For Twitter: 
@@ -56,6 +120,7 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     - Do NOT include "Here is a post" or quotes. Just output the content.
     - CRITICAL: MIMIC the provided writing style closely. If the sample is casual/witty, be casual/witty. If it's formal/academic, be formal/academic.
     - CRITICAL: If the user has provided a STANCE or NOTES, you MUST reflect that specific perspective. Do not write a generic post.
+    ${frameworkInstruction ? `- CRITICAL: Ensure the post clearly follows the requested framework structure.` : ""}
     
     Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : platform === "THREADS" ? "an engaging Threads post" : "a Tweet"} about ${topicName}.
   `;
@@ -69,6 +134,65 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
         return { content: "Error generating content. Please try again later.", topic: topicName };
     }
 }
+
+export async function analyzeTrends(newsItems: any[]): Promise<any[]> {
+
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    // Limit to batch of 10 to avoid token limits
+    const batch = newsItems.slice(0, 10);
+
+    const prompt = `
+    Analyze these news items for "viral potential" on social media (LinkedIn/Twitter).
+    
+    News Items:
+    ${batch.map((item, index) => `
+    ${index + 1}. Title: ${item.title}
+       Snippet: ${item.contentSnippet}
+    `).join("\n")}
+
+    For each item, output a JSON object with:
+    - id: (the index number, e.g. 1)
+    - viralScore: (number 0-100, based on controversy, relevance, or "breaking" nature)
+    - summary: (1 sentence summary of WHY it matters)
+    - hook: (A catchy "hook" sentence to start a post with)
+    
+    Output ONLY valid JSON array.
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+        const analysis = JSON.parse(text);
+
+        // Merge analysis with original items
+        return batch.map(item => {
+            // Find matching analysis by index (imperfect but simple for this scale)
+            // We rely on the order being preserved or the ID we passed.
+            // Actually, let's map by index since we passed indices 1-based.
+
+            // Simple fallback if parsing fails or order shifts:
+            // We can't easily match without robust ID.
+            // Let's assume the AI returns array in same order.
+            return item;
+        }).map((item, idx) => {
+            const analyzed = analysis.find((a: any) => a.id === idx + 1);
+            return {
+                ...item,
+                viralScore: analyzed?.viralScore || 0,
+                aiSummary: analyzed?.summary || item.contentSnippet,
+                generatedHook: analyzed?.hook || item.title
+            };
+        });
+
+    } catch (error) {
+        console.error("AI Trend Analysis Error:", error);
+        // Fallback: return items with default scores
+        return batch.map(item => ({ ...item, viralScore: 0, aiSummary: item.contentSnippet }));
+    }
+}
+
 
 export async function checkStyleMatch(sample: string, generated: string) {
     // Placeholder for style matching analysis if needed
