@@ -31,3 +31,15 @@ export async function renderStoryboardAction(scenes: any[]) {
         return { success: false, error: "Failed to render visuals" };
     }
 }
+
+import { generateSpeech } from "@/lib/audio";
+
+export async function generateAudioAction(scriptText: string) {
+    try {
+        const audioBase64 = await generateSpeech(scriptText);
+        return { success: true, audio: audioBase64 };
+    } catch (error) {
+        console.error("Audio Action Error:", error);
+        return { success: false, error: "Failed to generate audio" };
+    }
+}

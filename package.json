@@ -23,6 +23,7 @@
     "@react-email/tailwind": "^2.0.3",
     "@resvg/resvg-js": "^2.6.2",
     "@types/bcryptjs": "^2.4.6",
+    "@types/wav": "^1.0.4",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -41,6 +42,7 @@
     "tailwind-merge": "^3.4.0",
     "twitter-api-v2": "^1.28.0",
     "uuid": "^13.0.0",
+    "wav": "^1.0.2",
     "youtube-transcript-api-node": "^1.0.0",
     "yt-transcript-api": "^1.0.8",
     "zod": "^4.3.5"

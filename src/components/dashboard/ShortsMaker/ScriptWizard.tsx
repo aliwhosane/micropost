@@ -1,16 +1,18 @@
+
 "use client";
 
 import { useState } from "react";
-import { createScriptAction, renderStoryboardAction } from "@/app/actions/shorts";
-import { Loader2, Clapperboard, PlayCircle, Image as ImageIcon } from "lucide-react";
+import { createScriptAction, renderStoryboardAction, generateAudioAction } from "@/app/actions/shorts";
+import { Loader2, Clapperboard, PlayCircle, Image as ImageIcon, Volume2, Download } from "lucide-react";
 import { cn } from "@/lib/utils"; // Assuming utils exist
 
 export function ScriptWizard() {
-    const [step, setStep] = useState<"INPUT" | "SCRIPT" | "VISUALS">("INPUT");
+    const [step, setStep] = useState<"INPUT" | "SCRIPT" | "VISUALS" | "AUDIO">("INPUT");
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [scriptData, setScriptData] = useState<any>(null);
     const [renderedScenes, setRenderedScenes] = useState<any[]>([]);
+    const [audioBase64, setAudioBase64] = useState<string | null>(null);
 
     async function handleGenerateScript() {
         if (!input) return;
@@ -35,6 +37,19 @@ export function ScriptWizard() {
         }
     }
 
+    async function handleGenerateAudio() {
+        setIsLoading(true);
+        // Combine all scenes into one text for reading
+        const fullScript = scriptData.scenes.map((s: any) => s.text).join(". ");
+        const res = await generateAudioAction(fullScript);
+        setIsLoading(false);
+
+        if (res.success && res.audio) {
+            setAudioBase64(res.audio);
+            setStep("AUDIO");
+        }
+    }
+
     return (
         <div className="w-full max-w-4xl mx-auto p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-8 min-h-[600px]">
             {/* Progress Header */}
@@ -49,12 +64,14 @@ export function ScriptWizard() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm">
-                    <span className={cn("px-3 py-1 rounded-full", step === "INPUT" ? "bg-primary/20 text-primary" : "text-zinc-600")}>1. Topic</span>
+                <div className="flex items-center gap-2 text-sm overflow-x-auto">
+                    <span className={cn("px-3 py-1 rounded-full whitespace-nowrap", step === "INPUT" ? "bg-primary/20 text-primary" : "text-zinc-600")}>1. Topic</span>
                     <span className="text-zinc-700">→</span>
-                    <span className={cn("px-3 py-1 rounded-full", step === "SCRIPT" ? "bg-primary/20 text-primary" : "text-zinc-600")}>2. Script</span>
+                    <span className={cn("px-3 py-1 rounded-full whitespace-nowrap", step === "SCRIPT" ? "bg-primary/20 text-primary" : "text-zinc-600")}>2. Script</span>
                     <span className="text-zinc-700">→</span>
-                    <span className={cn("px-3 py-1 rounded-full", step === "VISUALS" ? "bg-primary/20 text-primary" : "text-zinc-600")}>3. Storyboard</span>
+                    <span className={cn("px-3 py-1 rounded-full whitespace-nowrap", step === "VISUALS" ? "bg-primary/20 text-primary" : "text-zinc-600")}>3. Visuals</span>
+                    <span className="text-zinc-700">→</span>
+                    <span className={cn("px-3 py-1 rounded-full whitespace-nowrap", step === "AUDIO" ? "bg-primary/20 text-primary" : "text-zinc-600")}>4. Audio</span>
                 </div>
             </div>
 
@@ -150,16 +167,65 @@ export function ScriptWizard() {
                         ))}
                     </div>
 
-                    <div className="flex justify-center pt-8">
+                    <div className="flex items-center gap-4 pt-8">
+                        <button
+                            onClick={() => setStep("SCRIPT")}
+                            className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
+                        >
+                            Back
+                        </button>
+                        <button
+                            onClick={handleGenerateAudio}
+                            disabled={isLoading}
+                            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        >
+                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
+                            Generate Voiceover
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step 4: Audio & Final */}
+            {step === "AUDIO" && audioBase64 && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center">
+                    <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-xl inline-block">
+                        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
+                            <Clapperboard className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-2">Assets Ready!</h3>
+                        <p className="text-zinc-400">Your video pack is ready for download.</p>
+                    </div>
+
+                    <div className="max-w-md mx-auto bg-zinc-950 border border-zinc-800 rounded-lg p-6 space-y-4">
+                        <h4 className="text-sm font-bold text-zinc-300 uppercase tracking-wider">Voiceover Preview</h4>
+                        <audio controls src={`data:audio/wav;base64,${audioBase64}`} className="w-full" />
+                    </div>
+
+                    <div className="flex justify-center gap-4">
                         <button
                             onClick={() => setStep("INPUT")}
                             className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
                         >
-                            Create Another
+                            Start New
                         </button>
+                        {/* In a real app, this would zip everything (images + audio). For now, we simulate success. */}
+                        <a
+                            href={`data:audio/wav;base64,${audioBase64}`}
+                            download="micropost-voiceover.wav"
+                            className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all"
+                        >
+                            <Download className="w-5 h-5" />
+                            Download Audio
+                        </a>
+                    </div>
+
+                    <div className="text-xs text-zinc-500 mt-4">
+                        *Right-click images in the Storyboard tab to save them individually.
                     </div>
                 </div>
             )}
         </div>
     );
 }
+
