@@ -21,8 +21,8 @@ export async function publishToSocials(post: { id: string; userId: string; conte
     });
 
     if (!account || !account.access_token) {
-        console.warn(`No connected ${provider} account found for user ${post.userId}. Posting mocked.`);
-        return { success: true, mocked: true };
+        console.error(`No connected ${provider} account found for user ${post.userId}.`);
+        return { success: false, error: `No connected ${provider} account found. Please connect in Settings.` };
     }
 
     try {
@@ -135,8 +135,49 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             console.log("Successfully posted to LinkedIn");
         } else if (provider === "threads") {
             // Threads API publishing (2 steps)
-            const accessToken = account.access_token;
+            let accessToken = account.access_token;
             if (!accessToken) throw new Error("No access token available for Threads");
+
+            // Check for expiration
+            const expiresAt = account.expires_at;
+            const now = Math.floor(Date.now() / 1000);
+
+            // Refresh if expired or within 24 hours of expiry (Threads tokens are long-lived, safe to refresh early)
+            if (expiresAt && (expiresAt - now < 86400)) {
+                console.log("Threads token expired or close to expiration. Refreshing...");
+                try {
+                    const refreshResponse = await axios.get("https://graph.threads.net/refresh_access_token", {
+                        params: {
+                            grant_type: "th_refresh_token",
+                            access_token: accessToken
+                        }
+                    });
+
+                    const { access_token: newAccessToken, expires_in } = refreshResponse.data;
+
+                    if (newAccessToken) {
+                        // Update database
+                        await prisma.account.update({
+                            where: {
+                                provider_providerAccountId: {
+                                    provider: "threads",
+                                    providerAccountId: account.providerAccountId,
+                                },
+                            },
+                            data: {
+                                access_token: newAccessToken,
+                                expires_at: Math.floor(Date.now() / 1000) + (expires_in || 5184000), // Default 60 days
+                            },
+                        });
+
+                        accessToken = newAccessToken;
+                        console.log("Successfully refreshed Threads token.");
+                    }
+                } catch (refreshError) {
+                    console.error("Failed to refresh Threads token:", refreshError);
+                    // Continue with old token if refresh fails? Likely will fail too, but we let it fall through.
+                }
+            }
 
             // Step 1: Create a media container
             const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost.vercel.app"}/api/images/${post.id}`;
@@ -226,11 +267,24 @@ export async function publishToSocials(post: { id: string; userId: string; conte
         if (axios.isAxiosError(error)) {
             console.error(`Axios Status: ${error.response?.status}`);
             console.error("Axios Response Data:", JSON.stringify(error.response?.data, null, 2));
+
+            // Check for Threads expired session (Code 190)
+            if (provider === "threads" && error.response?.data?.error?.code === 190) {
+                console.error("Threads Session Expired. User needs to re-authenticate.");
+                return { success: false, error: "Threads session expired. Please sign out and sign in again." };
+            }
         } else {
             // Likely TwitterApi error
             console.error("Error Object:", error);
             if (error.code) console.error("Error Code:", error.code);
             if (error.data) console.error("Error Data:", JSON.stringify(error.data, null, 2));
+            if (error.code === 403) {
+                console.error("****************************************************************");
+                console.error("CRITICAL ADVICE: Twitter 403 Forbidden Error detected.");
+                console.error("1. If you are on Twitter FREE Tier: Media upload is NOT supported. You must post text-only.");
+                console.error("2. If you are on BASIC Tier: Your access token might be stale. Reconnect Twitter in Settings.");
+                console.error("****************************************************************");
+            }
             if (error.errors) console.error("Inner Errors:", JSON.stringify(error.errors, null, 2));
         }
 

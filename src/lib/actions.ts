@@ -194,6 +194,7 @@ export async function approvePost(postId: string, scheduledAt?: string) {
             });
         } else {
             // Optionally mark as FAILED
+            console.error("Publishing failed for post", postId, "Error:", result.error);
             await prisma.post.update({
                 where: { id: postId, userId: session.user.id },
                 data: { status: "FAILED" }

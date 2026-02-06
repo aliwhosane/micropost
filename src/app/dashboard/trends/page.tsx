@@ -71,7 +71,7 @@ export default function TrendsPage() {
             setIsDraftOpen(false);
             setDraftInstructions("");
             // Ideally trigger a toast or navigate to drafts
-            window.location.href = "/dashboard"; // Simple redirect to dashboard to see the new post
+            window.location.href = "/dashboard/posts"; // Redirect to posts to review pending draft
         } catch (error) {
             console.error("Failed to generate draft", error);
         } finally {

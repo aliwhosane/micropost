@@ -17,7 +17,7 @@ export default function Home() {
       "priceCurrency": "USD"
     },
     "description": siteConfig.description,
-    "featureList": "AI Content Generation, Social Media Scheduling, Post Analytics, Bio Optimization",
+    "featureList": "AI Content Generation, Viral Frameworks (PAS, AIDA), AI Image Generation, Threads Scheduling, Social Media Scheduling, Post Analytics, Bio Optimization",
   };
 
   const faqSchema = {

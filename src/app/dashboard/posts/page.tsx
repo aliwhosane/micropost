@@ -52,7 +52,7 @@ export default async function PostsPage() {
 
                 {/* ALL PLATFORMS VIEW */}
                 <TabsContent value="all" className="space-y-4">
-                    <Tabs defaultValue="all_status">
+                    <Tabs defaultValue="pending">
                         <TabsList>
                             <TabsTrigger value="all_status">All Statuses</TabsTrigger>
                             <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -97,7 +97,7 @@ export default async function PostsPage() {
 
                 {/* TWITTER VIEW */}
                 <TabsContent value="twitter" className="space-y-4">
-                    <Tabs defaultValue="all_status">
+                    <Tabs defaultValue="pending">
                         <TabsList>
                             <TabsTrigger value="all_status">All Twitter</TabsTrigger>
                             <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -139,7 +139,7 @@ export default async function PostsPage() {
 
                 {/* LINKEDIN VIEW */}
                 <TabsContent value="linkedin" className="space-y-4">
-                    <Tabs defaultValue="all_status">
+                    <Tabs defaultValue="pending">
                         <TabsList>
                             <TabsTrigger value="all_status">All LinkedIn</TabsTrigger>
                             <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -181,7 +181,7 @@ export default async function PostsPage() {
 
                 {/* THREADS VIEW */}
                 <TabsContent value="threads" className="space-y-4">
-                    <Tabs defaultValue="all_status">
+                    <Tabs defaultValue="pending">
                         <TabsList>
                             <TabsTrigger value="all_status">All Threads</TabsTrigger>
                             <TabsTrigger value="pending">Pending</TabsTrigger>

@@ -227,8 +227,8 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             </div>
 
             {/* VisionCraft / Image Attachment */}
-            {/* Show selector if no image and status is pending/draft */}
-            {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT") && !isEditing && (
+            {/* Show selector if no image and status is pending/draft/failed */}
+            {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && !isEditing && (
                 <div className="pt-2 border-t border-white/5">
                     {!showVisionSelector ? (
                         <button
@@ -284,7 +284,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                         </button>
 
                         {/* Remove Action */}
-                        {!isEditing && (initialStatus === "PENDING" || initialStatus === "DRAFT") && (
+                        {!isEditing && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && (
                             <button
                                 onClick={async () => {
                                     setImageUrl(null);

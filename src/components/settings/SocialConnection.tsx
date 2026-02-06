@@ -1,6 +1,7 @@
 "use client";
+
 import { Button } from "@/components/ui/Button";
-import { Linkedin, Twitter, Check, AtSign } from "lucide-react";
+import { Linkedin, Twitter, Check, AtSign, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -8,9 +9,10 @@ import { cn } from "@/lib/utils";
 interface SocialConnectionProps {
     provider: "twitter" | "linkedin" | "threads";
     isConnected: boolean;
+    isExpired?: boolean;
 }
 
-export function SocialConnection({ provider, isConnected }: SocialConnectionProps) {
+export function SocialConnection({ provider, isConnected, isExpired }: SocialConnectionProps) {
     const [isLoading, setIsLoading] = useState(false);
     const handleConnect = async () => {
         setIsLoading(true);
@@ -36,9 +38,11 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
     return (
         <div className={cn(
             "flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
-            isConnected
+            isConnected && !isExpired
                 ? "bg-surface border-primary/20 shadow-sm"
-                : "bg-surface-container-low border-transparent hover:border-outline-variant/30"
+                : isExpired
+                    ? "bg-error/5 border-error/20"
+                    : "bg-surface-container-low border-transparent hover:border-outline-variant/30"
         )}>
             <div className="flex items-center gap-4">
                 <div className={cn("p-2.5 rounded-lg", brandBg, brandColor)}>
@@ -47,9 +51,13 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
                 <div>
                     <div className="font-semibold text-sm text-on-surface">{label}</div>
                     <div className="text-xs text-on-surface-variant flex items-center mt-0.5">
-                        {isConnected ? (
+                        {isConnected && !isExpired ? (
                             <span className="text-primary flex items-center font-medium">
                                 <Check className="h-3 w-3 mr-1" /> Connected
+                            </span>
+                        ) : isExpired ? (
+                            <span className="text-error flex items-center font-medium">
+                                <AlertCircle className="h-3 w-3 mr-1" /> Session Expired
                             </span>
                         ) : (
                             "Not connected"
@@ -57,7 +65,7 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
                     </div>
                 </div>
             </div>
-            {isConnected ? (
+            {isConnected && !isExpired ? (
                 <Button
                     size="sm"
                     variant="outlined"
@@ -66,6 +74,16 @@ export function SocialConnection({ provider, isConnected }: SocialConnectionProp
                     disabled={isLoading}
                 >
                     Disconnect
+                </Button>
+            ) : isExpired ? (
+                <Button
+                    size="sm"
+                    variant="tonal"
+                    className="h-8 px-4 bg-error/10 text-error hover:bg-error/20"
+                    onClick={handleConnect}
+                    isLoading={isLoading}
+                >
+                    Reconnect
                 </Button>
             ) : (
                 <Button

@@ -161,18 +161,41 @@ export default async function SettingsPage() {
                         <Card className="border-outline-variant/30 shadow-sm bg-surface">
                             <CardContent className="pt-6 space-y-4">
                                 <p className="text-sm text-on-surface-variant mb-2">Connect accounts to enable auto-publishing.</p>
-                                <SocialConnection
-                                    provider="linkedin"
-                                    isConnected={user.accounts.some((a: any) => a.provider === "linkedin")}
-                                />
-                                <SocialConnection
-                                    provider="twitter"
-                                    isConnected={user.accounts.some((a: any) => a.provider === "twitter")}
-                                />
-                                <SocialConnection
-                                    provider="threads"
-                                    isConnected={user.accounts.some((a: any) => a.provider === "threads")}
-                                />
+
+                                {(() => {
+                                    const getAccount = (provider: string) => user.accounts.find((a: any) => a.provider === provider);
+                                    const checkExpired = (account: any) => {
+                                        if (!account) return false;
+                                        // If no expires_at, assume valid or handle elsewhere. 
+                                        // Threads/Twitter usually set it.
+                                        if (!account.expires_at) return false;
+                                        return account.expires_at < Math.floor(Date.now() / 1000);
+                                    };
+
+                                    const linkedin = getAccount("linkedin");
+                                    const twitter = getAccount("twitter");
+                                    const threads = getAccount("threads");
+
+                                    return (
+                                        <>
+                                            <SocialConnection
+                                                provider="linkedin"
+                                                isConnected={!!linkedin}
+                                                isExpired={checkExpired(linkedin)}
+                                            />
+                                            <SocialConnection
+                                                provider="twitter"
+                                                isConnected={!!twitter}
+                                                isExpired={checkExpired(twitter)}
+                                            />
+                                            <SocialConnection
+                                                provider="threads"
+                                                isConnected={!!threads}
+                                                isExpired={checkExpired(threads)}
+                                            />
+                                        </>
+                                    );
+                                })()}
                             </CardContent>
                         </Card>
                     </section>
