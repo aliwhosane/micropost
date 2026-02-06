@@ -16,26 +16,37 @@ async function loadFont() {
 /**
  * Option A & B: Social Snap / Pull Quote (Satori)
  */
-export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE", authorHandle: string = "@micropost_user", platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER"): Promise<Buffer> {
+export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE" | "NOTE", authorHandle: string = "@micropost_user", platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER", avatarUrl?: string | null): Promise<Buffer> {
     const fontData = await loadFont();
 
     const isQuote = type === "QUOTE";
+    const isNote = type === "NOTE";
 
     // Dimensions
     const width = platform === "TWITTER" ? 1200 : 1080;
     const height = platform === "TWITTER" ? 675 : 1080;
 
-    // Simple styles for the clear "Snap" vs gradient "Quote"
-    const bgStyle = isQuote
-        ? "linear-gradient(135deg, #020617 0%, #1e293b 100%)" // Premium Dark Slate Gradient
-        : "white"; // Clean white for Snap
+    // Background Styles
+    let bgStyle;
+    if (isQuote) {
+        bgStyle = "linear-gradient(135deg, #020617 0%, #1e293b 100%)"; // Premium Dark Slate
+    } else if (isNote) {
+        bgStyle = "#18181b"; // Zinc-950 (Dark Note)
+    } else {
+        bgStyle = "white"; // Clean white for Snap
+    }
 
-    const textStyle: React.CSSProperties = isQuote
-        ? { color: "white", fontSize: "64px", fontWeight: 800, textAlign: "center", lineHeight: "1.2", letterSpacing: "-0.02em" }
-        : { color: "black", fontSize: "24px", textAlign: "left" };
+    // Styles & Typography
+    let textStyle: React.CSSProperties = { color: "black", fontSize: "24px", textAlign: "left" };
 
-    // Safety: Strip emojis just in case (though action does it too)
-    const renderText = isQuote ? text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '') : text;
+    if (isQuote) {
+        textStyle = { color: "white", fontSize: "64px", fontWeight: 800, textAlign: "center", lineHeight: "1.2", letterSpacing: "-0.02em" };
+    } else if (isNote) {
+        textStyle = { color: "#e4e4e7", fontSize: "42px", fontWeight: 500, textAlign: "left", lineHeight: "1.4", fontFamily: "Inter" }; // Zinc-200
+    }
+
+    // Safety: Strip emojis for Quote/Note to ensure font stability (Snap keeps them if possible, but satori emoji support varies)
+    const renderText = (isQuote || isNote) ? text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '') : text;
 
     const element = (
         <div
@@ -45,50 +56,80 @@ export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE", a
                 width: "100%",
                 flexDirection: "column",
                 justifyContent: isQuote ? "center" : "flex-start",
-                alignItems: isQuote ? "center" : "flex-start",
-                padding: isQuote ? "80px" : "40px",
+                alignItems: isQuote ? "center" : "flex-start", // Note aligns top-left but centered container
+                padding: isQuote ? "80px" : "60px",
                 background: bgStyle,
                 fontFamily: "Inter"
             }}
         >
+            {/* Note Header */}
+            {isNote && (
+                <div style={{ display: "flex", marginBottom: "40px", width: "100%", borderBottom: "1px solid #3f3f46", paddingBottom: "20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#ef4444" }} />
+                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#eab308" }} />
+                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#22c55e" }} />
+                    </div>
+                </div>
+            )}
+
             {/* Author Header (for Snap) or Footer (for Quote) */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    width: "100%",
-                    marginBottom: isQuote ? "0" : "20px",
-                    marginTop: isQuote ? "40px" : "0",
-                    justifyContent: isQuote ? "center" : "flex-start",
-                    opacity: 0.8,
-                    order: isQuote ? 2 : 0
-                }}
-            >
-                {/* Placeholder avatar */}
+            {!isNote && (
                 <div
                     style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        background: isQuote ? "rgba(255,255,255,0.2)" : "#ccc",
-                        marginRight: "10px"
-                    }}
-                />
-                <span
-                    style={{
-                        color: isQuote ? "rgba(255,255,255,0.7)" : "#666",
-                        fontSize: "16px",
-                        fontWeight: 500
+                        display: "flex",
+                        alignItems: "center",
+                        width: "100%",
+                        marginBottom: isQuote ? "0" : "20px",
+                        marginTop: isQuote ? "40px" : "0",
+                        justifyContent: isQuote ? "center" : "flex-start",
+                        opacity: 0.8,
+                        order: isQuote ? 2 : 0
                     }}
                 >
-                    {authorHandle}
-                </span>
-            </div>
+                    {/* Avatar */}
+                    {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={avatarUrl}
+                            width="48"
+                            height="48"
+                            style={{ borderRadius: "50%", objectFit: "cover", marginRight: "12px" }}
+                        />
+                    ) : (
+                        <div
+                            style={{
+                                width: "32px",
+                                height: "32px",
+                                borderRadius: "50%",
+                                background: isQuote ? "rgba(255,255,255,0.2)" : "#ccc",
+                                marginRight: "10px"
+                            }}
+                        />
+                    )}
+
+                    <span
+                        style={{
+                            color: isQuote ? "rgba(255,255,255,0.7)" : "#666",
+                            fontSize: "16px",
+                            fontWeight: 500
+                        }}
+                    >
+                        {authorHandle}
+                    </span>
+                </div>
+            )}
 
             {/* Main Content */}
-            <div style={textStyle}>
+            <div style={{ ...textStyle, width: isNote ? "85%" : "100%" }}>
                 {isQuote ? `"${renderText}"` : renderText}
             </div>
+
+            {isNote && (
+                <div style={{ marginTop: "auto", fontSize: "16px", color: "#52525b" }}>
+                    micropost.ai
+                </div>
+            )}
         </div>
     );
 
@@ -185,4 +226,116 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
         console.error("Image generation failed:", error);
         throw error;
     }
+}
+
+/**
+ * Option D: Vertical Video Slide (Satori)
+ * 1080x1920 layout for TikTok/Reels
+ */
+export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA'): Promise<Buffer> {
+    const fontData = await loadFont();
+
+    // Design Tokens
+    const width = 1080;
+    const height = 1920;
+
+    // Colors & Styles
+    let bgStyle = "linear-gradient(180deg, #18181b 0%, #09090b 100%)"; // Zinc-950 to Black
+    let textColor = "#f4f4f5"; // Zinc-100
+    let fontSize = "80px";
+    let fontWeight: any = 700;
+    let textAlign: any = "center"; // Use 'any' to bypass strict CSSProperties type issues in Satori if needed, or cast properly
+    let highlightColor = "#eab308"; // Yellow-500
+
+    if (type === 'HOOK') {
+        bgStyle = "linear-gradient(180deg, #0f172a 0%, #020617 100%)"; // Slate-900
+        textColor = "#ffffff";
+        fontSize = "110px"; // Massive for Hook
+        fontWeight = 900;
+        highlightColor = "#f43f5e"; // Rose-500
+    } else if (type === 'CTA') {
+        bgStyle = "linear-gradient(180deg, #4c1d95 0%, #2e1065 100%)"; // Violet-900
+        fontSize = "90px";
+    }
+
+    // Split text for formatting if needed, or just render block
+    // Satori handles wrapping automatically for normal text.
+    // Safety: Strip emojis to ensure font stability
+    const renderText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+
+    const element = (
+        <div
+            style={{
+                display: "flex",
+                height: "100%",
+                width: "100%",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "80px",
+                background: bgStyle,
+                fontFamily: "Inter",
+                backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)', // Subtle noise/texture
+            }
+            }
+        >
+            {/* Safe Area Top */}
+            < div style={{ position: 'absolute', top: 0, height: '200px', width: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)' }} />
+
+            < div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '40px'
+                }}
+            >
+                {type === 'HOOK' && (
+                    <div style={{ color: highlightColor, fontSize: "40px", textTransform: "uppercase", letterSpacing: "8px", fontWeight: 600 }}>
+                        Watch This
+                    </div>
+                )}
+
+                <div style={{
+                    color: textColor,
+                    fontSize,
+                    fontWeight,
+                    textAlign: "center",
+                    lineHeight: "1.1",
+                    textShadow: "0 10px 30px rgba(0,0,0,0.5)"
+                }}>
+                    {text}
+                </div>
+            </div >
+
+            {/* Safe Area Bottom */}
+            < div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '32px' }}>
+                    @micropost.ai
+                </div>
+            </div >
+        </div >
+    );
+
+    const svg = await satori(
+        element,
+        {
+            width,
+            height,
+            fonts: [
+                {
+                    name: "Inter",
+                    data: fontData,
+                    weight: fontWeight as any, // Cast specific weights if needed
+                    style: "normal",
+                },
+            ],
+        }
+    );
+
+    const resvg = new Resvg(svg, {
+        fitTo: { mode: 'width', value: width },
+    });
+    const pngData = resvg.render();
+    return pngData.asPng();
 }

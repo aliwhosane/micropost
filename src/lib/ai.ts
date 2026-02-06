@@ -256,3 +256,53 @@ export async function regeneratePostContent(currentContent: string, selectedText
         throw new Error("Failed to regenerate content.");
     }
 }
+
+export interface VideoScript {
+    title: string;
+    scenes: {
+        id: string; // generated client-side or by AI
+        type: 'HOOK' | 'BODY' | 'CTA';
+        text: string;
+        visualCue: string;
+    }[];
+}
+
+export async function generateVideoScript(topicOrText: string): Promise<VideoScript> {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+    You are an expert TikTok/Reels scriptwriter.
+    Convert the following topic or text into a high-retention short video script.
+    
+    Input: "${topicOrText}"
+
+    Constraints:
+    - Structure: 
+        1. HOOK (Grab attention immediately)
+        2. BODY (3-4 points/steps, concise)
+        3. CTA (Call to action)
+    - Total Scenes: Strict range of 3 to 6 scenes total.
+    - Tone: Conversational, high energy, punchy.
+    - Visual Cues: Describe what should be on screen simply (e.g., "Person acting surprised", "Text overlay: 'Secret Hack'").
+
+    Output Format:
+    Return ONLY valid JSON with this structure:
+    {
+        "title": "Video Title",
+        "scenes": [
+            { "id": "1", "type": "HOOK", "text": "...", "visualCue": "..." },
+            ...
+        ]
+    }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("AI Script Generation Error:", error);
+        throw new Error("Failed to generate script.");
+    }
+}

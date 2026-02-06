@@ -4,21 +4,21 @@ import { auth } from "@/auth";
 import { generateSocialCard, generateAiImage } from "@/lib/image-gen";
 import { prisma } from "@/lib/db";
 
-export async function generateVisionAction(type: "SNAP" | "QUOTE" | "HOOK", postContent: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER") {
+export async function generateVisionAction(type: "SNAP" | "QUOTE" | "HOOK" | "NOTE", postContent: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER") {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     // Retrieve user for handle/branding info if needed
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, email: true } // Could get handle if we store it
+        select: { name: true, email: true, image: true } // Could get handle if we store it
     });
 
     // Construct a handle (fallback to name or "User")
     const handle = user?.name ? `@${user.name.replace(/\s+/g, '')}` : "@micropost_user";
 
     try {
-        if (type === "SNAP" || type === "QUOTE") {
+        if (type === "SNAP" || type === "QUOTE" || type === "NOTE") {
             let contentToRender = postContent;
 
             if (type === "QUOTE") {
@@ -49,7 +49,9 @@ export async function generateVisionAction(type: "SNAP" | "QUOTE" | "HOOK", post
                 }
             }
 
-            const buffer = await generateSocialCard(contentToRender, type, handle, platform);
+            // For NOTE, we use the post content directly (or custom passed content if we had another arg)
+
+            const buffer = await generateSocialCard(contentToRender, type, handle, platform, user?.image);
             // Convert buffer to base64 data uri
             const base64 = buffer.toString('base64');
             return `data:image/png;base64,${base64}`;
