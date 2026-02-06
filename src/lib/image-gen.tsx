@@ -7,10 +7,14 @@ import React from "react";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Load fonts (we'll need a font buffer for Satori)
+import fs from "fs/promises";
+import path from "path";
+
+// Load fonts (we'll need a font buffer for Satori)
 async function loadFont() {
-    // Fetch Inter font
-    const response = await fetch("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff");
-    return await response.arrayBuffer();
+    // Load from local filesystem
+    const fontPath = path.join(process.cwd(), "public", "fonts", "Inter-Regular.woff");
+    return await fs.readFile(fontPath);
 }
 
 /**
@@ -159,13 +163,16 @@ export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE" | 
 /**
  * Option C: Visual Hook (AI Image)
  */
-export async function generateAiImage(concept: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER"): Promise<string> {
+export async function generateAiImage(concept: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" | "TIKTOK" = "TWITTER"): Promise<string> {
     // 1. Enhance Prompt using lighter text model (still using old SDK for now as it's initialized globally, or switch?)
     // Let's stick to the existing `genAI` for text to minimize churn, or just use the new one for everything.
     // Minimizing churn: use defaults.
     const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
 
-    const aspectRatio = platform === "TWITTER" ? "16:9" : "1:1";
+    // Handle aspect ratios
+    let aspectRatio = "16:9";
+    if (platform === "THREADS") aspectRatio = "1:1";
+    if (platform === "TIKTOK") aspectRatio = "9:16";
 
     const enhancementPrompt = `
     Act as a professional AI Art Director.
@@ -201,6 +208,10 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
                 parts: [
                     { text: finalPrompt }
                 ]
+            },
+            config: {
+                // @ts-ignore - The SDK types might not be fully up to date for aspectRatio
+                aspectRatio: aspectRatio
             }
         });
 
@@ -232,7 +243,7 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
  * Option D: Vertical Video Slide (Satori)
  * 1080x1920 layout for TikTok/Reels
  */
-export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA'): Promise<Buffer> {
+export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA', bgImage?: string): Promise<Buffer> {
     const fontData = await loadFont();
 
     // Design Tokens
@@ -275,7 +286,9 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                 padding: "80px",
                 background: bgStyle,
                 fontFamily: "Inter",
-                backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)', // Subtle noise/texture
+                backgroundImage: bgImage ? `url(${bgImage})` : 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)',
+                backgroundSize: bgImage ? 'cover' : undefined,
+                backgroundPosition: bgImage ? 'center' : undefined,
             }
             }
         >
@@ -311,7 +324,7 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
             {/* Safe Area Bottom */}
             < div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '32px' }}>
-                    @micropost.ai
+                    www.micropost-ai.vercel.app
                 </div>
             </div >
         </div >

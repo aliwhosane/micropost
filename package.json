@@ -21,6 +21,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@react-email/components": "^1.0.4",
     "@react-email/tailwind": "^2.0.3",
+    "@remotion/lambda": "^4.0.419",
+    "@remotion/player": "^4.0.419",
     "@resvg/resvg-js": "^2.6.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/wav": "^1.0.4",
@@ -28,6 +30,7 @@
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.4",
     "framer-motion": "^12.25.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
@@ -35,6 +38,7 @@
     "prisma": "5.22.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "remotion": "^4.0.419",
     "resend": "^6.7.0",
     "rss-parser": "^3.13.0",
     "satori": "^0.19.1",
@@ -45,10 +49,11 @@
     "wav": "^1.0.2",
     "youtube-transcript-api-node": "^1.0.0",
     "yt-transcript-api": "^1.0.8",
-    "zod": "^4.3.5"
+    "zod": "^3.22.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/dotenv": "^6.1.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
