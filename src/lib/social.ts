@@ -38,8 +38,8 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 try {
                     // TwitterApi requires client ID and secret for refresh
                     const client = new TwitterApi({
-                        clientId: process.env.AUTH_TWITTER_ID!,
-                        clientSecret: process.env.AUTH_TWITTER_SECRET!,
+                        clientId: process.env.AUTH_TWITTER_ID?.trim()!,
+                        clientSecret: process.env.AUTH_TWITTER_SECRET?.trim()!,
                     });
 
                     const { client: refreshedClient, accessToken: newAccessToken, refreshToken: newRefreshToken, expiresIn } = await client.refreshOAuth2Token(account.refresh_token);
@@ -61,8 +61,11 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
                     accessToken = newAccessToken;
                     console.log("Successfully refreshed Twitter token.");
-                } catch (refreshError) {
+                } catch (refreshError: any) {
                     console.error("Failed to refresh Twitter token:", refreshError);
+                    if (refreshError.code) console.error("Refresh Error Code:", refreshError.code);
+                    if (refreshError.data) console.error("Refresh Error Data:", JSON.stringify(refreshError.data, null, 2));
+
                     // If refresh fails, we might still try with old token or throw
                     throw new Error("Failed to refresh Twitter token");
                 }

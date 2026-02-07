@@ -176,6 +176,9 @@ export default async function SettingsPage() {
                                     const twitter = getAccount("twitter");
                                     const threads = getAccount("threads");
 
+                                    console.log("Twitter Account Debug:", JSON.stringify(twitter, null, 2));
+                                    console.log("Current Time (s):", Math.floor(Date.now() / 1000));
+
                                     return (
                                         <>
                                             <SocialConnection

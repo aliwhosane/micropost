@@ -5,6 +5,7 @@ import { Linkedin, Twitter, Check, AtSign, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { disconnectAccount } from "@/lib/actions";
 
 interface SocialConnectionProps {
     provider: "twitter" | "linkedin" | "threads";
@@ -25,7 +26,14 @@ export function SocialConnection({ provider, isConnected, isExpired }: SocialCon
         }
     };
     const handleDisconnect = async () => {
-        alert("To disconnect, please revoke access from the platform directly.");
+        setIsLoading(true);
+        try {
+            await disconnectAccount(provider);
+        } catch (error) {
+            console.error("Failed to disconnect:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const isTwitter = provider === "twitter";

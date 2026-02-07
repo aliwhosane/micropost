@@ -338,3 +338,19 @@ export async function triggerManualGeneration(formData?: FormData) {
     await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms);
     revalidatePath("/dashboard");
 }
+
+export async function disconnectAccount(provider: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    // "twitter", "linkedin", "threads"
+    await prisma.account.deleteMany({
+        where: {
+            userId: userId,
+            provider: provider.toLowerCase(),
+        },
+    });
+
+    revalidatePath("/dashboard/settings");
+}
