@@ -166,8 +166,11 @@ export default async function SettingsPage() {
                                     const getAccount = (provider: string) => user.accounts.find((a: any) => a.provider === provider);
                                     const checkExpired = (account: any) => {
                                         if (!account) return false;
-                                        // If no expires_at, assume valid or handle elsewhere. 
-                                        // Threads/Twitter usually set it.
+
+                                        // If we have a refresh_token, we can auto-refresh, so don't show as expired.
+                                        if (account.refresh_token) return false;
+
+                                        // If no refresh_token, check access_token expiration
                                         if (!account.expires_at) return false;
                                         return account.expires_at < Math.floor(Date.now() / 1000);
                                     };

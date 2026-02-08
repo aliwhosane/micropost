@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate, spring, Easing, random, Video, staticFile } from 'remotion';
+import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate, spring, Easing, random, Video, staticFile, Audio } from 'remotion';
 import { Heart, Bell, MousePointer2, ArrowDown, ArrowUp } from 'lucide-react';
 
 // 1. Progress Bar (Global or Local)
@@ -54,7 +54,7 @@ export const Watermark: React.FC<{ handle?: string }> = ({ handle = "@micropost_
             backdropFilter: 'blur(4px)',
             borderRadius: '20px',
             color: 'white',
-            fontFamily: 'Inter',
+            fontFamily: 'var(--font-geist-sans)',
             fontSize: '24px',
             fontWeight: 600,
             opacity: 0.8
@@ -73,33 +73,36 @@ export const SubscribeInternal: React.FC = () => {
     const slide = spring({ frame, fps, from: 100, to: 0 });
 
     return (
-        <div style={{
-            position: 'absolute',
-            bottom: 200,
-            left: 0,
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            transform: `translateY(${slide}px)`
-        }}>
+        <>
+            <Audio src={staticFile("overlays/swoosh.wav")} volume={0.5} />
             <div style={{
-                background: '#ff0000',
-                color: 'white',
-                padding: '15px 40px',
-                borderRadius: '50px',
-                fontSize: '32px',
-                fontWeight: 'bold',
-                fontFamily: 'Inter',
+                position: 'absolute',
+                bottom: 200,
+                left: 0,
+                width: '100%',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+                justifyContent: 'center',
+                transform: `translateY(${slide}px)`
             }}>
-                <Bell size={32} fill="white" />
-                SUBSCRIBE
-                <MousePointer2 size={32} fill="white" style={{ marginLeft: 10 }} />
+                <div style={{
+                    background: '#ff0000',
+                    color: 'white',
+                    padding: '15px 40px',
+                    borderRadius: '50px',
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    fontFamily: 'var(--font-geist-sans)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+                }}>
+                    <Bell size={32} fill="white" />
+                    SUBSCRIBE
+                    <MousePointer2 size={32} fill="white" style={{ marginLeft: 10 }} />
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 // Export wrapper to use in composition
@@ -141,6 +144,7 @@ export const LikeExplosion: React.FC = () => {
 
     return (
         <>
+            <Audio src={staticFile("overlays/Pop.wav")} volume={0.3} />
             {hearts.map(h => <HeartParticle key={h.id} {...h} />)}
         </>
     );
@@ -151,6 +155,7 @@ export const ConfettiCannon: React.FC = () => {
     // Uses GPU accelerated transparent video
     return (
         <AbsoluteFill style={{ pointerEvents: 'none' }}>
+            <Audio src={staticFile("overlays/Pop.wav")} />
             <Video
                 src={staticFile("overlays/confetti.webm")}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -167,30 +172,33 @@ export const LinkInBio: React.FC<{ position?: 'TOP' | 'BOTTOM' }> = ({ position 
     const bounce = Math.sin(frame / 5) * 20;
 
     return (
-        <div style={{
-            position: 'absolute',
-            [position === 'TOP' ? 'top' : 'bottom']: 300,
-            left: 0,
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 20
-        }}>
-            {position === 'TOP' && <ArrowUp size={80} color="white" style={{ transform: `translateY(${-bounce}px)` }} />}
+        <>
+            <Audio src={staticFile("overlays/swoosh.wav")} volume={0.3} />
             <div style={{
-                background: 'white',
-                color: 'black',
-                padding: '10px 30px',
-                borderRadius: '20px',
-                fontSize: '32px',
-                fontWeight: 'bold',
-                fontFamily: 'Inter',
+                position: 'absolute',
+                [position === 'TOP' ? 'top' : 'bottom']: 300,
+                left: 0,
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 20
             }}>
-                LINK IN BIO
+                {position === 'TOP' && <ArrowUp size={80} color="white" style={{ transform: `translateY(${-bounce}px)` }} />}
+                <div style={{
+                    background: 'white',
+                    color: 'black',
+                    padding: '10px 30px',
+                    borderRadius: '20px',
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    fontFamily: 'var(--font-geist-sans)',
+                }}>
+                    LINK IN BIO
+                </div>
+                {position === 'BOTTOM' && <ArrowDown size={80} color="white" style={{ transform: `translateY(${bounce}px)` }} />}
             </div>
-            {position === 'BOTTOM' && <ArrowDown size={80} color="white" style={{ transform: `translateY(${bounce}px)` }} />}
-        </div>
+        </>
     );
 };
 
@@ -205,7 +213,7 @@ export const WaitForIt: React.FC = () => {
             top: 200,
             width: '100%',
             textAlign: 'center',
-            fontFamily: 'Inter',
+            fontFamily: 'var(--font-geist-sans)',
             fontSize: '48px',
             fontWeight: 800,
             color: '#fbbf24', // Amber
@@ -223,6 +231,8 @@ export const FlashEffect: React.FC = () => {
     const opacity = interpolate(frame, [0, 5, 10], [0, 1, 0], { extrapolateRight: 'clamp' });
 
     return (
-        <AbsoluteFill style={{ backgroundColor: 'white', mixBlendMode: 'overlay', opacity, pointerEvents: 'none' }} />
+        <AbsoluteFill style={{ backgroundColor: 'white', mixBlendMode: 'overlay', opacity, pointerEvents: 'none' }}>
+            <Audio src={staticFile("overlays/camera-shutter.wav")} />
+        </AbsoluteFill>
     );
 };

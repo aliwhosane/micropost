@@ -17,6 +17,7 @@ export const ShortsCompositionSchema = z.object({
         })
     ),
     audioUrl: z.string().optional(),
+    durationInFrames: z.number().optional(), // Allow passing total duration explicitly
 });
 
 const Scene: React.FC<{ imageUrl: string; index: number; durationInFrames: number; overlays?: string[] }> = ({ imageUrl, index, durationInFrames, overlays = [] }) => {

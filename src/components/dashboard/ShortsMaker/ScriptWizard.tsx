@@ -9,9 +9,21 @@ import { ShortsComposition } from "@/remotion/Composition";
 // We'll build a custom simple popover using absolute positioning since we don't know the exact UI lib setup.
 
 export function ScriptWizard() {
-    const [step, setStep] = useState<"INPUT" | "SCRIPT" | "VISUALS" | "AUDIO">("INPUT");
+    const [step, setStep] = useState<"TOPIC" | "SCRIPT" | "STORYBOARD" | "PREVIEW">("TOPIC");
     const [input, setInput] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+
+    // Granular Loading States
+    const [loadingState, setLoadingState] = useState({
+        script: false,
+        visuals: false,
+        audio: false
+    });
+
+    // Render State
+    const [renderStatus, setRenderStatus] = useState<"IDLE" | "RENDERING" | "DONE" | "ERROR">("IDLE");
+    const [renderProgress, setRenderProgress] = useState<number>(0);
+    const [renderUrl, setRenderUrl] = useState<string | null>(null);
+
     const [scriptData, setScriptData] = useState<any>(null);
     const [renderedScenes, setRenderedScenes] = useState<any[]>([]);
     const [audioBase64, setAudioBase64] = useState<string | null>(null);
@@ -19,13 +31,10 @@ export function ScriptWizard() {
     // New State
     const [visualStyle, setVisualStyle] = useState<"MINIMAL" | "CINEMATIC">("MINIMAL");
     const [selectedVoice, setSelectedVoice] = useState<"Puck" | "Kore">("Kore");
-    // Track max step reached to allow jumping back but not forward prematurely
     const [maxStepReached, setMaxStepReached] = useState<number>(1);
 
-    const stepOrder = ["INPUT", "SCRIPT", "VISUALS", "AUDIO"];
-    const currentStepIndex = stepOrder.indexOf(step) + 1;
+    const stepOrder = ["TOPIC", "SCRIPT", "STORYBOARD", "PREVIEW"];
 
-    // Update max step when proceeding
     const updateMaxStep = (newStep: string) => {
         const newIndex = stepOrder.indexOf(newStep) + 1;
         if (newIndex > maxStepReached) {
@@ -36,48 +45,50 @@ export function ScriptWizard() {
 
     async function handleGenerateScript() {
         if (!input) return;
-        setIsLoading(true);
+        setLoadingState(prev => ({ ...prev, script: true }));
         const res = await createScriptAction(input);
-        setIsLoading(false);
+        setLoadingState(prev => ({ ...prev, script: false }));
 
         if (res.success) {
             setScriptData(res.script);
-            updateMaxStep("SCRIPT");
+            // Invalidate downstream assets if regenerating
+            setRenderedScenes([]);
+            setAudioBase64(null);
+            setMaxStepReached(2);
+            setStep("SCRIPT");
         }
     }
 
     async function handleRenderVisuals() {
-        setIsLoading(true);
-        // Use current scriptData (which might be edited)
+        setLoadingState(prev => ({ ...prev, visuals: true }));
         const res = await renderStoryboardAction(scriptData.scenes, visualStyle);
-        setIsLoading(false);
+        setLoadingState(prev => ({ ...prev, visuals: false }));
 
         if (res.success && res.scenes) {
             setRenderedScenes(res.scenes);
-            updateMaxStep("VISUALS");
+            // Invalidate audio if visuals changed (though audio depends on text, this is a linear flow)
+            setAudioBase64(null);
+            updateMaxStep("STORYBOARD");
         }
     }
 
     async function handleGenerateAudio() {
-        setIsLoading(true);
-        // Combine all scenes into one text for reading
+        setLoadingState(prev => ({ ...prev, audio: true }));
         const fullScript = scriptData.scenes.map((s: any) => s.text).join(". ");
         const res = await generateAudioAction(fullScript, selectedVoice);
-        setIsLoading(false);
+        setLoadingState(prev => ({ ...prev, audio: false }));
 
         if (res.success && res.audio) {
             setAudioBase64(res.audio);
-            updateMaxStep("AUDIO");
+            updateMaxStep("PREVIEW");
         }
     }
 
-    // Remotion Props Calculation
+    // ... (rest of memo calculation same as before) ...
     const remotionProps = useMemo(() => {
         if (!renderedScenes.length) return null;
-
         const scenes = renderedScenes.map(scene => {
             const wordCount = scene.text.split(' ').length;
-            // Est. speaking rate: 150 wpm = 2.5 wps.
             const durationInSeconds = Math.max(3, wordCount / 2.5);
             return {
                 text: scene.text,
@@ -86,17 +97,13 @@ export function ScriptWizard() {
                 overlays: scene.overlays || []
             };
         });
-
         const totalDuration = scenes.reduce((acc, s) => acc + s.durationInFrames, 0);
-
         return {
             scenes,
             audioUrl: audioBase64 || undefined,
             durationInFrames: totalDuration
         };
-
     }, [renderedScenes, audioBase64]);
-
 
     return (
         <div className="w-full max-w-4xl mx-auto p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-8 min-h-[600px]">
@@ -139,7 +146,7 @@ export function ScriptWizard() {
             </div>
 
             {/* Step 1: Input */}
-            {step === "INPUT" && (
+            {step === "TOPIC" && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300">What is your video about?</label>
@@ -150,14 +157,27 @@ export function ScriptWizard() {
                             className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-white focus:ring-2 focus:ring-primary/50 outline-none resize-none"
                         />
                     </div>
-                    <button
-                        onClick={handleGenerateScript}
-                        disabled={isLoading || !input}
-                        className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                    >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
-                        Generate Script
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={handleGenerateScript}
+                            disabled={loadingState.script || !input}
+                            className="flex-1 py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        >
+                            {loadingState.script ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
+                            {scriptData ? "Regenerate Script" : "Generate Script"}
+                        </button>
+
+                        {/* Show Continue button if script already exists */}
+                        {scriptData && (
+                            <button
+                                onClick={() => setStep("SCRIPT")}
+                                className="px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                            >
+                                Continue →
+                            </button>
+                        )}
+                    </div>
+                    {scriptData && <p className="text-xs text-orange-400 text-center">*Regenerating will overwrite your current script.</p>}
                 </div>
             )}
 
@@ -192,7 +212,7 @@ export function ScriptWizard() {
                                             setScriptData({ ...scriptData, scenes: newScenes });
                                         }}
                                         className="w-full bg-transparent text-white text-lg font-medium border-none p-0 focus:ring-0 resize-none"
-                                        rows={Math.max(2, Math.ceil(scene.text.length / 50))} // Auto-height ish
+                                        rows={Math.max(2, Math.ceil(scene.text.length / 50))}
                                     />
                                     <div className="flex items-center gap-2 text-xs text-zinc-500">
                                         <ImageIcon className="w-3 h-3" />
@@ -203,7 +223,6 @@ export function ScriptWizard() {
                         ))}
                     </div>
 
-                    {/* Visual Style Selection */}
                     <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg flex items-center justify-between">
                         <div>
                             <h4 className="text-white font-medium">Visual Style</h4>
@@ -227,40 +246,46 @@ export function ScriptWizard() {
 
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => setStep("INPUT")}
+                            onClick={() => setStep("TOPIC")}
                             className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
                         >
                             Back
                         </button>
+
                         <button
                             onClick={handleRenderVisuals}
-                            disabled={isLoading}
+                            disabled={loadingState.visuals}
                             className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                            Render {visualStyle === "CINEMATIC" ? "Cinematic" : "Minimal"} Storyboard
+                            {loadingState.visuals ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                            {renderedScenes.length > 0 ? "Regenerate Visuals" : `Render ${visualStyle === "CINEMATIC" ? "Cinematic" : "Minimal"} Storyboard`}
                         </button>
+
+                        {renderedScenes.length > 0 && (
+                            <button
+                                onClick={() => setStep("STORYBOARD")}
+                                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                            >
+                                Continue →
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
 
             {/* Step 3: Visuals Preview */}
-            {step === "VISUALS" && (
+            {step === "STORYBOARD" && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                     <h3 className="text-lg font-bold text-white text-center">Your Storyboard</h3>
-
-                    {/* Horizontal Scroll for Vertical Cards */}
+                    {/* ... (scene list skipped for brevity, keeping existing logic) ... */}
                     <div className="flex gap-4 overflow-x-auto pb-6 snap-x min-h-[550px]">
                         {renderedScenes.map((scene: any, idx: number) => {
                             const activeOverlays = scene.overlays || [];
                             const toggleOverlay = (id: string) => {
+                                // Simplified for replacement block
                                 const newScenes = [...renderedScenes];
-                                const currentOverlays = newScenes[idx].overlays || [];
-                                if (currentOverlays.includes(id)) {
-                                    newScenes[idx].overlays = currentOverlays.filter((o: string) => o !== id);
-                                } else {
-                                    newScenes[idx].overlays = [...currentOverlays, id];
-                                }
+                                const current = newScenes[idx].overlays || [];
+                                newScenes[idx].overlays = current.includes(id) ? current.filter((o: any) => o !== id) : [...current, id];
                                 setRenderedScenes(newScenes);
                             };
 
@@ -353,92 +378,79 @@ export function ScriptWizard() {
                                         </button>
                                     </div>
                                 </div>
-                            );
+                            )
                         })}
                     </div>
 
+
                     <div className="flex items-center gap-4 pt-8 bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
+                        {/* ... (Voice Select) ... */}
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium text-zinc-400">Select Voice</label>
                             <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-                                <button
-                                    onClick={() => setSelectedVoice("Puck")}
-                                    className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Puck" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}
-                                >
-                                    Male (Puck)
-                                </button>
-                                <button
-                                    onClick={() => setSelectedVoice("Kore")}
-                                    className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Kore" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}
-                                >
-                                    Female (Kore)
-                                </button>
+                                <button onClick={() => setSelectedVoice("Puck")} className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Puck" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}>Male</button>
+                                <button onClick={() => setSelectedVoice("Kore")} className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Kore" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}>Female</button>
                             </div>
                         </div>
 
                         <div className="flex-1 flex items-center gap-4 justify-end">
                             <button
-                                onClick={() => updateMaxStep("SCRIPT")}
+                                onClick={() => setStep("SCRIPT")}
                                 className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
                             >
                                 Back
                             </button>
                             <button
                                 onClick={handleGenerateAudio}
-                                disabled={isLoading}
+                                disabled={loadingState.audio}
                                 className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                             >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
-                                Generate Audio & Preview
+                                {loadingState.audio ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
+                                {audioBase64 ? "Regenerate Audio" : "Generate Audio & Preview"}
                             </button>
+
+                            {audioBase64 && (
+                                <button
+                                    onClick={() => setStep("PREVIEW")}
+                                    className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                                >
+                                    Continue →
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Step 4: Video Preview (Remotion) */}
-            {step === "AUDIO" && remotionProps && (
+            {/* Step 4: Video Preview */}
+            {step === "PREVIEW" && remotionProps && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center">
-                    <div className="bg-purple-500/10 border border-purple-500/20 p-6 rounded-xl inline-block w-full">
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                            <Video className="w-6 h-6 text-purple-400" />
-                            <h3 className="text-2xl font-bold text-white">Video Preview</h3>
-                        </div>
-
-                        {/* Remotion Player */}
-                        <div className="mx-auto aspect-[9/16] w-[300px] rounded-xl overflow-hidden shadow-2xl border border-zinc-800 bg-black mb-6">
+                    {/* ... (Video Player Logic) ... */}
+                    <div className="bg-zinc-950 p-4 rounded-xl inline-block w-full max-w-sm mx-auto border border-zinc-800">
+                        <h3 className="text-white font-bold mb-4">Final Output</h3>
+                        <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden">
                             <Player
                                 component={ShortsComposition}
-                                inputProps={{
-                                    scenes: remotionProps.scenes,
-                                    audioUrl: remotionProps.audioUrl
-                                }}
+                                inputProps={{ scenes: remotionProps.scenes, audioUrl: remotionProps.audioUrl }}
                                 durationInFrames={remotionProps.durationInFrames}
                                 fps={30}
                                 compositionWidth={1080}
                                 compositionHeight={1920}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                }}
+                                style={{ width: '100%', height: '100%' }}
                                 controls
                             />
                         </div>
-
-                        <p className="text-zinc-400 text-sm max-w-md mx-auto">
-                            The video is stitched together using <strong>Remotion</strong>. Scene duration is automatically synced to the estimated reading speed.
-                        </p>
                     </div>
-
 
                     <div className="flex justify-center gap-4">
                         <button
                             onClick={() => {
-                                setStep("INPUT");
+                                setStep("TOPIC");
                                 setMaxStepReached(1);
                                 setScriptData(null);
                                 setRenderedScenes([]);
                                 setAudioBase64(null);
+                                setInput("");
                             }}
                             className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
                         >
@@ -447,20 +459,18 @@ export function ScriptWizard() {
 
                         <button
                             onClick={handleGenerateAudio}
-                            disabled={isLoading}
+                            disabled={loadingState.audio}
                             className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50"
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
+                            {loadingState.audio ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
                             Regenerate Audio
                         </button>
 
                         {audioBase64 && (
                             <a
-                                href={audioBase64}
+                                href={`data:audio/wav;base64,${audioBase64}`}
                                 download="micropost-voiceover.wav"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold flex items-center gap-2 transition-all"
+                                className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all"
                             >
                                 <Download className="w-5 h-5" />
                                 Download Audio
@@ -469,23 +479,87 @@ export function ScriptWizard() {
                         <button
                             onClick={async () => {
                                 if (!remotionProps) return;
-                                setIsLoading(true);
-                                alert("Starting Render! This might take 30-60s. Check console for progress.");
-                                const { renderVideoAction } = await import("@/app/actions/render-video");
-                                const res = await renderVideoAction(remotionProps.scenes, remotionProps.audioUrl);
-                                setIsLoading(false);
-                                if (res.success) {
-                                    alert(`Render started! Job ID: ${res.renderId}. Check your AWS S3 bucket (${res.bucketName}) in a few minutes.`);
-                                } else {
-                                    alert(`Error: ${res.error}. (Did you deploy the lambda functions?)`);
+                                setRenderStatus("RENDERING");
+                                setRenderProgress(0);
+
+                                try {
+                                    const { renderVideoAction } = await import("@/app/actions/render-video");
+                                    const { getRenderStatusAction } = await import("@/app/actions/render-status");
+
+                                    const res = await renderVideoAction(remotionProps.scenes, remotionProps.audioUrl);
+
+                                    if (res.success && res.renderId && res.bucketName) {
+                                        const renderId = res.renderId;
+                                        const bucketName = res.bucketName;
+
+                                        // Poll for status
+                                        const interval = setInterval(async () => {
+                                            try {
+                                                const statusRes = await getRenderStatusAction(renderId, bucketName);
+
+                                                if (statusRes.success) {
+                                                    if (statusRes.status === "done" && statusRes.url) {
+                                                        clearInterval(interval);
+                                                        setRenderStatus("DONE");
+                                                        setRenderUrl(statusRes.url);
+                                                    } else if (statusRes.status === "rendering") {
+                                                        setRenderProgress(Math.round((statusRes.progress || 0) * 100));
+                                                    } else if (statusRes.status === "error") {
+                                                        clearInterval(interval);
+                                                        setRenderStatus("ERROR");
+                                                        console.error("Render failed:", statusRes.error);
+                                                        alert(`Render failed: ${statusRes.error}`);
+                                                    }
+                                                } else {
+                                                    // Network or server action error
+                                                    clearInterval(interval);
+                                                    setRenderStatus("ERROR");
+                                                    console.error("Status check failed:", statusRes.error);
+                                                    // Don't alert for every status check failure continuously
+                                                }
+                                            } catch (pollErr) {
+                                                clearInterval(interval);
+                                                console.error("Polling error:", pollErr);
+                                                setRenderStatus("ERROR");
+                                            }
+                                        }, 2000);
+                                    } else {
+                                        setRenderStatus("ERROR");
+                                        alert("Failed to start render");
+                                    }
+                                } catch (e) {
+                                    console.error("Render trigger error:", e);
+                                    setRenderStatus("ERROR");
+                                    alert("Failed to trigger render");
                                 }
                             }}
-                            disabled={isLoading}
+                            disabled={renderStatus === "RENDERING"}
                             className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50"
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                            Render MP4 (AWS)
+                            {renderStatus === "RENDERING" ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Rendering {renderProgress}%
+                                </>
+                            ) : (
+                                <>
+                                    <Video className="w-5 h-5" />
+                                    {renderStatus === "DONE" ? "Render New MP4" : "Render MP4"}
+                                </>
+                            )}
                         </button>
+
+                        {renderStatus === "DONE" && renderUrl && (
+                            <a
+                                href={renderUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all animate-in fade-in slide-in-from-left-4"
+                            >
+                                <Download className="w-5 h-5" />
+                                Download MP4
+                            </a>
+                        )}
                     </div>
                 </div>
             )}

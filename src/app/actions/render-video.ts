@@ -96,6 +96,8 @@ export async function renderVideoAction(scenes: any[], audioUrl?: string) {
             composition: "ShortsMaker",
             inputProps,
             codec: "h264",
+            framesPerLambda: 2000, // Process up to 2000 frames per lambda => minimal concurrency (1 renderer for <66s)
+            privacy: "public",
         });
 
         console.log("Lambda invoked successfully. Render ID:", renderId);

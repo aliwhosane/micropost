@@ -180,7 +180,7 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
     Concept: "${concept}"
     
     Requirements:
-    - Aspect Ratio: ${aspectRatio}
+    - COMPOSITION MUST BE VERTICAL.
     - Cinematic lighting
     - High resolution, 2k
     - Describe composition, camera angle, and textures.
@@ -210,8 +210,10 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
                 ]
             },
             config: {
-                // @ts-ignore - The SDK types might not be fully up to date for aspectRatio
-                aspectRatio: aspectRatio
+                // @ts-ignore - Nano Banana API specific config
+                image_config: {
+                    aspect_ratio: aspectRatio
+                }
             }
         });
 
@@ -244,7 +246,9 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
  * 1080x1920 layout for TikTok/Reels
  */
 export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA', bgImage?: string): Promise<Buffer> {
+    console.log("generateVerticalStats called with text length:", text?.length, "type:", type, "hasBgImage:", !!bgImage);
     const fontData = await loadFont();
+    console.log("Font data loaded:", fontData ? fontData.length : "null");
 
     // Design Tokens
     const width = 1080;
@@ -272,7 +276,9 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
     // Split text for formatting if needed, or just render block
     // Satori handles wrapping automatically for normal text.
     // Safety: Strip emojis to ensure font stability
-    const renderText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+    const stringText = text || " ";
+    const renderText = stringText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+    console.log("Render text prepared:", renderText.substring(0, 50));
 
     const element = (
         <div
@@ -317,7 +323,7 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                     lineHeight: "1.1",
                     textShadow: "0 10px 30px rgba(0,0,0,0.5)"
                 }}>
-                    {text}
+                    {renderText}
                 </div>
             </div >
 
@@ -330,6 +336,7 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
         </div >
     );
 
+    console.log("Calling satori...");
     const svg = await satori(
         element,
         {
@@ -345,10 +352,13 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
             ],
         }
     );
+    console.log("Satori generated SVG length:", svg.length);
 
+    console.log("Calling resvg...");
     const resvg = new Resvg(svg, {
         fitTo: { mode: 'width', value: width },
     });
     const pngData = resvg.render();
+    console.log("Resvg render complete");
     return pngData.asPng();
 }

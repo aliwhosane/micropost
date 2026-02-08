@@ -8,11 +8,26 @@ export const RemotionRoot: React.FC = () => {
             <Composition
                 id="ShortsMaker"
                 component={ShortsComposition}
-                durationInFrames={30 * 10} // Default duration, overridden by props
+                durationInFrames={30 * 10} // Default fallback
                 fps={30}
                 width={1080}
                 height={1920}
                 schema={ShortsCompositionSchema}
+                calculateMetadata={async ({ props }) => {
+                    const defaultDuration = 30 * 10;
+                    try {
+                        if (props.durationInFrames) {
+                            return { durationInFrames: props.durationInFrames };
+                        }
+                        if (props.scenes) {
+                            const total = props.scenes.reduce((acc: number, s: any) => acc + (s.durationInFrames || 90), 0);
+                            return { durationInFrames: total || defaultDuration };
+                        }
+                        return { durationInFrames: defaultDuration };
+                    } catch (e) {
+                        return { durationInFrames: defaultDuration };
+                    }
+                }}
                 defaultProps={{
                     scenes: [
                         {
@@ -21,7 +36,8 @@ export const RemotionRoot: React.FC = () => {
                             durationInFrames: 90,
                         }
                     ],
-                    audioUrl: ""
+                    audioUrl: "",
+                    durationInFrames: 300 // Add to default props just in case
                 }}
             />
         </>

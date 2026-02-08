@@ -301,30 +301,32 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             )}
 
             {/* Footer Actions */}
-            {isScheduling && (
-                <SchedulingPopover
-                    ref={schedulePopoverRef}
-                    scheduleDate={scheduleDate}
-                    isScheduling={isSchedulingSubmitting}
-                    onClose={() => setIsScheduling(false)}
-                    onConfirm={() => handleConfirmSchedule(id)}
-                    onDateChange={setScheduleDate}
-                />
-            )}
+            <div className="relative w-fit">
+                {isScheduling && (
+                    <SchedulingPopover
+                        ref={schedulePopoverRef}
+                        scheduleDate={scheduleDate}
+                        isScheduling={isSchedulingSubmitting}
+                        onClose={() => setIsScheduling(false)}
+                        onConfirm={() => handleConfirmSchedule(id)}
+                        onDateChange={setScheduleDate}
+                    />
+                )}
 
-            <PostCardActions
-                status={initialStatus}
-                isEditing={isEditing}
-                actionStatus={actionStatus}
-                scheduledFor={scheduledFor}
-                onEdit={() => setIsEditing(true)}
-                onCancel={handleCancel}
-                onSave={handleSave}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onToggleSchedule={() => setIsScheduling(!isScheduling)}
-                isValid={isValid}
-            />
+                <PostCardActions
+                    status={initialStatus}
+                    isEditing={isEditing}
+                    actionStatus={actionStatus}
+                    scheduledFor={scheduledFor}
+                    onEdit={() => setIsEditing(true)}
+                    onCancel={handleCancel}
+                    onSave={handleSave}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    onToggleSchedule={() => setIsScheduling(!isScheduling)}
+                    isValid={isValid}
+                />
+            </div>
         </div>
     );
 }
