@@ -180,7 +180,7 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
     Concept: "${concept}"
     
     Requirements:
-    - COMPOSITION MUST BE VERTICAL.
+    - COMPOSITION MUST BE VERTICAL (Aspect Ratio: 9:16).
     - Cinematic lighting
     - High resolution, 2k
     - Describe composition, camera angle, and textures.
@@ -216,6 +216,8 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
                 }
             }
         });
+
+
 
         console.log("Image Gen Full Response (New SDK):", JSON.stringify(response, null, 2));
 
@@ -290,18 +292,20 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                 justifyContent: "center",
                 alignItems: "center",
                 padding: "80px",
-                background: bgStyle,
+                background: bgImage ? `url(${bgImage})` : bgStyle,
                 fontFamily: "Inter",
-                backgroundImage: bgImage ? `url(${bgImage})` : 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)',
-                backgroundSize: bgImage ? 'cover' : undefined,
-                backgroundPosition: bgImage ? 'center' : undefined,
+                ...(bgImage ? {
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                } : {}),
             }
             }
         >
             {/* Safe Area Top */}
-            < div style={{ position: 'absolute', top: 0, height: '200px', width: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, height: '200px', width: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)' }} />
 
-            < div
+            <div
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -325,15 +329,15 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                 }}>
                     {renderText}
                 </div>
-            </div >
+            </div>
 
             {/* Safe Area Bottom */}
-            < div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '32px' }}>
                     www.micropost-ai.vercel.app
                 </div>
             </div >
-        </div >
+        </div>
     );
 
     console.log("Calling satori...");

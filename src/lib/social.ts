@@ -32,8 +32,14 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at; // Integer timestamp in seconds
             const now = Math.floor(Date.now() / 1000);
 
-            // If expired or about to expire (within 5 mins), refresh
-            if (expiresAt && (expiresAt - now < 300) && account.refresh_token) {
+            // 1. Check if ALREADY expired
+            if (expiresAt && now >= expiresAt) {
+                console.error("Twitter token has expired. User needs to re-authenticate.");
+                throw new Error("Twitter session expired. Please sign out and sign in again.");
+            }
+
+            // If expired or about to expire (within 24 hours), refresh
+            if (expiresAt && (expiresAt - now < 86400) && account.refresh_token) {
                 console.log("Twitter token expired or close to expiration. Refreshing...");
                 try {
                     // TwitterApi requires client ID and secret for refresh
@@ -67,7 +73,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     if (refreshError.data) console.error("Refresh Error Data:", JSON.stringify(refreshError.data, null, 2));
 
                     // If refresh fails, we might still try with old token or throw
-                    throw new Error("Failed to refresh Twitter token");
+                    // throw new Error("Failed to refresh Twitter token"); // Let it fail on usage or pass if lucky
                 }
             }
 
@@ -107,6 +113,58 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             // Often stored in 'providerAccountId' but sometimes just 'id'.
             // Let's assume providerAccountId is the URN (e.g. "urn:li:person:...")
 
+            let accessToken = account.access_token;
+            const expiresAt = account.expires_at;
+            const now = Math.floor(Date.now() / 1000);
+
+            // 1. Check if ALREADY expired
+            if (expiresAt && now >= expiresAt) {
+                console.error("LinkedIn token has expired. User needs to re-authenticate.");
+                throw new Error("LinkedIn session expired. Please sign out and sign in again.");
+            }
+
+            // 2. Refresh if within 7 days of expiry (LinkedIn tokens last 60 days)
+            // 7 days = 7 * 24 * 60 * 60 = 604800 seconds
+            if (expiresAt && (expiresAt - now < 604800) && account.refresh_token) {
+                console.log("LinkedIn token is within 7 days of expiration. Refreshing...");
+                try {
+                    const params = new URLSearchParams();
+                    params.append('grant_type', 'refresh_token');
+                    params.append('refresh_token', account.refresh_token);
+                    params.append('client_id', process.env.AUTH_LINKEDIN_ID!);
+                    params.append('client_secret', process.env.AUTH_LINKEDIN_SECRET!);
+
+                    const refreshResponse = await axios.post("https://www.linkedin.com/oauth/v2/accessToken", params, {
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    });
+
+                    const { access_token: newAccessToken, expires_in, refresh_token: newRefreshToken, refresh_token_expires_in } = refreshResponse.data;
+
+                    if (newAccessToken) {
+                        await prisma.account.update({
+                            where: {
+                                provider_providerAccountId: {
+                                    provider: "linkedin",
+                                    providerAccountId: account.providerAccountId,
+                                },
+                            },
+                            data: {
+                                access_token: newAccessToken,
+                                expires_at: Math.floor(Date.now() / 1000) + expires_in,
+                                refresh_token: newRefreshToken || account.refresh_token, // Update refresh token if provided
+                            },
+                        });
+                        accessToken = newAccessToken;
+                        console.log("Successfully refreshed LinkedIn token.");
+                    }
+                } catch (refreshError) {
+                    console.error("Failed to refresh LinkedIn token:", refreshError);
+                    // Continue with old token
+                }
+            }
+
+            if (!accessToken) throw new Error("No access token available for LinkedIn");
+
             const urn = account.providerAccountId; // Ensure this is stored correctly by NextAuth
 
             await axios.post(
@@ -130,7 +188,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${account.access_token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         "X-Restli-Protocol-Version": "2.0.0",
                     },
                 }
@@ -145,9 +203,16 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at;
             const now = Math.floor(Date.now() / 1000);
 
-            // Refresh if expired or within 24 hours of expiry (Threads tokens are long-lived, safe to refresh early)
-            if (expiresAt && (expiresAt - now < 86400)) {
-                console.log("Threads token expired or close to expiration. Refreshing...");
+            // 1. Check if ALREADY expired
+            if (expiresAt && now >= expiresAt) {
+                console.error("Threads token has expired. User needs to re-authenticate.");
+                throw new Error("Threads session expired. Please sign out and sign in again.");
+            }
+
+            // 2. Refresh if within 30 days of expiry (Threads tokens are valid for 60 days)
+            // 30 days = 30 * 24 * 60 * 60 = 2,592,000 seconds
+            if (expiresAt && (expiresAt - now < 2592000)) {
+                console.log("Threads token is within 30 days of expiration. Refreshing...");
                 try {
                     const refreshResponse = await axios.get("https://graph.threads.net/refresh_access_token", {
                         params: {
@@ -178,7 +243,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     }
                 } catch (refreshError) {
                     console.error("Failed to refresh Threads token:", refreshError);
-                    // Continue with old token if refresh fails? Likely will fail too, but we let it fall through.
+                    // Continue with old token as it might still be valid for a short time
                 }
             }
 

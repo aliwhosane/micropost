@@ -9,7 +9,7 @@ import {
 
 import { REGION, SITE_ID, FUNCTION_NAME, BUCKET_NAME } from '../../lib/lambda-config'; // Correct path to src/lib
 
-export async function renderVideoAction(scenes: any[], audioUrl?: string) {
+export async function renderVideoAction(scenes: any[], audioUrl?: string, durationInFrames?: number) {
     console.log("Starting renderVideoAction...");
     try {
         if (!process.env.REMOTION_AWS_ACCESS_KEY_ID) {
@@ -84,7 +84,8 @@ export async function renderVideoAction(scenes: any[], audioUrl?: string) {
 
         const inputProps = {
             scenes: finalScenes,
-            audioUrl: finalAudioUrl
+            audioUrl: finalAudioUrl,
+            durationInFrames: durationInFrames // Explicitly pass total duration
         };
 
         const { renderId, bucketName } = await renderMediaOnLambda({
@@ -96,7 +97,7 @@ export async function renderVideoAction(scenes: any[], audioUrl?: string) {
             composition: "ShortsMaker",
             inputProps,
             codec: "h264",
-            framesPerLambda: 2000, // Process up to 2000 frames per lambda => minimal concurrency (1 renderer for <66s)
+            framesPerLambda: 450, // Split into ~15s chunks to avoid timeout (single lambda limit 240s)
             privacy: "public",
         });
 

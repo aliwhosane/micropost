@@ -215,7 +215,7 @@ export default async function SettingsPage() {
                             <h2 className="text-xl font-bold text-on-surface">Subscription</h2>
                         </div>
 
-                        {user.subscriptionStatus === 'active' ? (
+                        {user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing' ? (
                             <PricingCard
                                 name={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "Lifetime Access" : "Premium Plan"}
                                 price={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "$999" : "Active"}

@@ -69,6 +69,9 @@ export function ScriptWizard() {
             // Invalidate audio if visuals changed (though audio depends on text, this is a linear flow)
             setAudioBase64(null);
             updateMaxStep("STORYBOARD");
+        } else {
+            console.error("Render Visuals Error:", res.error);
+            alert(`Failed to render visuals: ${res.error || "Unknown error"}`);
         }
     }
 
@@ -486,7 +489,11 @@ export function ScriptWizard() {
                                     const { renderVideoAction } = await import("@/app/actions/render-video");
                                     const { getRenderStatusAction } = await import("@/app/actions/render-status");
 
-                                    const res = await renderVideoAction(remotionProps.scenes, remotionProps.audioUrl);
+                                    const res = await renderVideoAction(
+                                        remotionProps.scenes,
+                                        remotionProps.audioUrl,
+                                        remotionProps.durationInFrames
+                                    );
 
                                     if (res.success && res.renderId && res.bucketName) {
                                         const renderId = res.renderId;
@@ -497,14 +504,21 @@ export function ScriptWizard() {
                                             try {
                                                 const statusRes = await getRenderStatusAction(renderId, bucketName);
 
+                                                console.log("Poll Status:", statusRes);
                                                 if (statusRes.success) {
-                                                    if (statusRes.status === "done" && statusRes.url) {
+                                                    if (statusRes.status === "done") {
                                                         clearInterval(interval);
                                                         setRenderStatus("DONE");
-                                                        setRenderUrl(statusRes.url);
-                                                    } else if (statusRes.status === "rendering") {
+                                                        if (statusRes.url) {
+                                                            setRenderUrl(statusRes.url);
+                                                        } else {
+                                                            console.error("Render done but no URL found");
+                                                            alert("Render completed but video URL is missing.");
+                                                        }
+                                                    } else if (statusRes.status === "rendering" || !statusRes.done) {
+                                                        // Remotion sometimes returns status="rendering" or just done=false
                                                         setRenderProgress(Math.round((statusRes.progress || 0) * 100));
-                                                    } else if (statusRes.status === "error") {
+                                                    } else if (statusRes.status === "error" || statusRes.fatalErrorEncountered) {
                                                         clearInterval(interval);
                                                         setRenderStatus("ERROR");
                                                         console.error("Render failed:", statusRes.error);

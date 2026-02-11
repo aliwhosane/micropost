@@ -24,7 +24,9 @@ export async function getRenderStatusAction(renderId: string, bucketName: string
             return {
                 success: false,
                 status: "error",
-                error: progress.errors[0]?.message || "Render failed"
+                error: progress.errors[0]?.message || "Render failed",
+                fatalErrorEncountered: true,
+                done: false
             };
         }
 
@@ -33,18 +35,28 @@ export async function getRenderStatusAction(renderId: string, bucketName: string
                 success: true,
                 status: "done",
                 outputFile: progress.outputFile,
-                url: progress.outputFile // The presigned URL or direct link depending on config
+                url: progress.outputFile,
+                done: true,
+                fatalErrorEncountered: false
             };
         }
 
         return {
             success: true,
             status: "rendering",
-            progress: progress.overallProgress
+            progress: progress.overallProgress,
+            done: false,
+            fatalErrorEncountered: false
         };
 
     } catch (error: any) {
         console.error("Render Status Error:", error);
-        return { success: false, error: error.message };
+        return {
+            success: false,
+            status: "error",
+            error: error.message,
+            done: false,
+            fatalErrorEncountered: true
+        };
     }
 }

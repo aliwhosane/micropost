@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         select: { subscriptionStatus: true }
     }) : null;
 
-    const isSubscribed = user?.subscriptionStatus === "active";
+    const isSubscribed = user?.subscriptionStatus === "active" || user?.subscriptionStatus === "trialing";
 
     return (
         <div className="min-h-screen flex bg-background">
