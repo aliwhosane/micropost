@@ -8,9 +8,9 @@ import { Player } from "@remotion/player";
 import { ShortsComposition } from "@/remotion/Composition";
 // We'll build a custom simple popover using absolute positioning since we don't know the exact UI lib setup.
 
-export function ScriptWizard() {
+export function ScriptWizard({ initialContent }: { initialContent?: string }) {
     const [step, setStep] = useState<"TOPIC" | "SCRIPT" | "STORYBOARD" | "PREVIEW">("TOPIC");
-    const [input, setInput] = useState("");
+    const [input, setInput] = useState(initialContent || "");
 
     // Granular Loading States
     const [loadingState, setLoadingState] = useState({

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { generateSocialPost } from "@/lib/ai";
+import { generateSocialPost, analyzeTrends } from "@/lib/ai";
+import { aggregateNews } from "@/lib/news";
 import { sendDailyDigest } from "@/lib/email";
 
 export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string, manualFramework?: string, targetPlatforms?: string[]) {
@@ -74,6 +75,37 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
         const generatedPosts = [];
 
+        // 2a. Fetch Trends for this user (Newsjacking Injection)
+        let newsContext = undefined;
+        try {
+            // Only fetch if they have topics
+            if (topicNames.length > 0) {
+                // Get trending news for user's topics (limit to 2 topics to avoid huge RSS fetch if they have many)
+                // actually aggregateNews handles array.
+                const newsItems = await aggregateNews(topicNames.slice(0, 3));
+
+                if (newsItems.length > 0) {
+                    // Analyze top 3 to save tokens/time
+                    const analyzedTrends = await analyzeTrends(newsItems.slice(0, 3));
+                    // Sort by viral score
+                    analyzedTrends.sort((a, b) => (b.viralScore || 0) - (a.viralScore || 0));
+
+                    // Pick the top trend
+                    if (analyzedTrends.length > 0) {
+                        const topTrend = analyzedTrends[0];
+                        newsContext = {
+                            title: topTrend.title,
+                            summary: topTrend.aiSummary || topTrend.contentSnippet || "",
+                            url: topTrend.link
+                        };
+                        console.log(`[TrendSurfer] Injected trend for user ${user.id}: "${topTrend.title}"`);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error(`[TrendSurfer] Failed to fetch trends for user ${user.id}`, e);
+        }
+
         // 3. Generate Posts
 
         // Twitter Generation Loop
@@ -94,6 +126,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        newsContext,
                         framework: currentFramework
                     });
 
@@ -137,6 +170,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        newsContext,
                         framework: currentFramework
                     });
 
@@ -180,6 +214,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             stance: t.stance
                         })),
                         temporaryThoughts,
+                        newsContext,
                         framework: currentFramework
                     });
 

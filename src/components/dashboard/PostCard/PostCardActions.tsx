@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/Button";
-import { Check, X, Pencil, Calendar as CalendarIcon } from "lucide-react";
+import { Check, X, Pencil, Calendar as CalendarIcon, Clapperboard, Sparkles } from "lucide-react";
 
 interface PostCardActionsProps {
     status: string;
@@ -12,6 +12,7 @@ interface PostCardActionsProps {
     onApprove: () => void;
     onReject: () => void;
     onToggleSchedule: () => void;
+    onRepurpose: () => void;
     isValid?: boolean;
     isCompact?: boolean;
 }
@@ -27,6 +28,7 @@ export function PostCardActions({
     onApprove,
     onReject,
     onToggleSchedule,
+    onRepurpose,
     isValid = true,
     isCompact = false
 }: PostCardActionsProps) {
@@ -99,6 +101,20 @@ export function PostCardActions({
                 <Button
                     size="sm"
                     variant="tonal"
+                    className="bg-purple-600/10 text-purple-700 dark:text-purple-300 hover:bg-purple-600/20 border border-purple-200/20 shadow-sm transition-all"
+                    onClick={onRepurpose}
+                    title="Turn into Short (Video)"
+                >
+                    <div className="relative mr-1.5">
+                        <Clapperboard className="w-3.5 h-3.5" />
+                        <Sparkles className="w-2 h-2 absolute -top-1 -right-1 text-purple-500" />
+                    </div>
+                    <span>Short</span>
+                </Button>
+                <div className="h-4 w-px bg-outline-variant/30 mx-1" />
+                <Button
+                    size="sm"
+                    variant="tonal"
                     className="bg-secondary-container text-on-secondary-container hover:bg-secondary-container/80"
                     onClick={onEdit}
                 >
@@ -148,6 +164,22 @@ export function PostCardActions({
 
     return (
         <div className="flex items-center gap-2">
+            {/* Repurpose Action for Published/Approved posts too! */}
+            <Button
+                size="sm"
+                variant="ghost"
+                className="text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-600/10"
+                onClick={onRepurpose}
+                title="Repurpose as Video"
+            >
+                <div className="relative mr-1.5">
+                    <Clapperboard className="w-3.5 h-3.5" />
+                    <Sparkles className="w-2 h-2 absolute -top-1 -right-1 text-purple-500" />
+                </div>
+                <span>Make Short</span>
+            </Button>
+            <div className="h-4 w-px bg-outline-variant/30 mx-1" />
+
             {scheduledFor && status === "APPROVED" && (
                 <span className="text-xs text-on-surface-variant mr-auto bg-surface-variant/50 px-2 py-1 rounded">
                     Scheduled: {new Date(scheduledFor).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}

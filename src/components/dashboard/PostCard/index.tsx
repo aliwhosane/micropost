@@ -113,6 +113,10 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         setIsEditing(false);
     };
 
+    const handleRepurpose = () => {
+        router.push(`/dashboard/shortsmaker?source_post_id=${id}`);
+    };
+
     const handleDownload = () => {
         if (!imageUrl) return;
         const link = document.createElement("a");
@@ -324,6 +328,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onToggleSchedule={() => setIsScheduling(!isScheduling)}
+                    onRepurpose={handleRepurpose}
                     isValid={isValid}
                 />
             </div>

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { SocialConnection } from "@/components/settings/SocialConnection";
 import { Linkedin, Twitter, Save, AlertCircle, Zap, Shield, Wand2, AtSign } from "lucide-react";
 import { AnalyzeButton } from "@/components/settings/AnalyzeButton";
+import { ProfileOptimizerSection } from "@/components/dashboard/Settings/ProfileOptimizerSection";
 import { PricingCard } from "@/components/settings/PricingCard";
 import { FormSlider } from "@/components/settings/FormSlider";
 
@@ -44,6 +45,9 @@ export default async function SettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 {/* Left Column: Preferences */}
                 <div className="lg:col-span-8 space-y-10">
+
+                    {/* Bio / Profile Optimizer */}
+                    <ProfileOptimizerSection />
 
                     {/* Content Configuration */}
                     <section id="content" className="scroll-mt-24 space-y-6">
