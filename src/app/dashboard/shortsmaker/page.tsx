@@ -2,11 +2,37 @@ import { ScriptWizard } from "@/components/dashboard/ShortsMaker/ScriptWizard";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getSubscriptionTier } from "@/lib/subscription";
+import { PremiumGate } from "@/components/dashboard/PremiumGate";
 
 export default async function ShortsMakerPage(props: { searchParams: Promise<{ source_post_id?: string }> }) {
     const searchParams = await props.searchParams;
     const session = await auth();
     if (!session?.user) return redirect("/login");
+
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { subscriptionStatus: true, subscriptionPlanId: true }
+    });
+
+    const tier = getSubscriptionTier(user || {});
+
+    if (tier !== "AGENCY") {
+        return (
+            <div className="p-8 h-full flex flex-col">
+                <div className="max-w-4xl mx-auto space-y-2 mb-8">
+                    <h1 className="text-3xl font-bold tracking-tight text-on-surface">ShortsMaker</h1>
+                    <p className="text-on-surface-variant">Turn ideas into viral TikTok/Reels scripts and storyboards in seconds.</p>
+                </div>
+                <PremiumGate
+                    title="Agency Exclusive"
+                    description="The AI Video Studio is reserved for Agency & Founding Members."
+                    features={["Unlimited AI Video Scripts", "Storyboards & Shot Lists", "Commercial Usage Rights"]}
+                    requiredTier="AGENCY"
+                />
+            </div>
+        );
+    }
 
     let initialContent = "";
 
@@ -16,9 +42,6 @@ export default async function ShortsMakerPage(props: { searchParams: Promise<{ s
             select: { content: true, userId: true }
         });
 
-        // Basic security check: ensure user owns post or is admin (if we had admin)
-        // Here we just check user ID match if we want strictness, or just let it be open if it's a "team" app?
-        // Using session.user.id compared to post.userId is safer.
         if (post && post.userId === session.user.id) {
             initialContent = post.content;
         }

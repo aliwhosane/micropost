@@ -50,7 +50,13 @@ export default function Home() {
       {/* Navbar */}
       <Navbar />
 
-      <LandingPageContent />
+      <LandingPageContent
+        productIds={{
+          pro: process.env.POLAR_PRODUCT_ID_PRO || "",
+          agencyMonthly: process.env.POLAR_PRODUCT_ID_AGENCY_MONTHLY || "",
+          agencyYearly: process.env.POLAR_PRODUCT_ID_AGENCY_YEARLY || ""
+        }}
+      />
 
       <Footer />
     </div>

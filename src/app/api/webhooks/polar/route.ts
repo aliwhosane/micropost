@@ -37,8 +37,11 @@ export async function POST(req: Request) {
 
     // Filter by product ID to avoid processing events from other products
     const ALLOWED_PRODUCT_IDS = [
-        "585a7590-d6dc-4bd5-b2ce-df7d29ae57ce", // Monthly Membership
-        "6f0dcd25-6b07-4cac-bb10-151b03435bbb", // Lifetime Access
+        "585a7590-d6dc-4bd5-b2ce-df7d29ae57ce", // Monthly Membership (Legacy)
+        "6f0dcd25-6b07-4cac-bb10-151b03435bbb", // Lifetime Access (Legacy)
+        "4b84edf0-398b-4c9b-994c-d3bdc43a2475", // Pro Monthly
+        "a4bf3289-c763-4802-ba72-77088853a8ca", // Agency Monthly
+        "6cb36d94-9acc-444b-8756-b725a2da4550", // Agency Yearly
     ];
 
     const data = evt.data as any;

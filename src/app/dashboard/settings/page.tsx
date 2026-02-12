@@ -221,9 +221,9 @@ export default async function SettingsPage() {
 
                         {user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing' ? (
                             <PricingCard
-                                name={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "Lifetime Access" : "Premium Plan"}
-                                price={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "$999" : "Active"}
-                                description={user.subscriptionPlanId === "6f0dcd25-6b07-4cac-bb10-151b03435bbb" ? "You are a founding member." : "Thank you for your support!"}
+                                name="Active Subscription"
+                                price="Active"
+                                description="Manage your subscription in the portal."
                                 features={["Unlimited Posts", "Priority Support", "Feature Access"]}
                                 buttonText="Manage Subscription"
                                 productId=""
@@ -231,24 +231,38 @@ export default async function SettingsPage() {
                                 isPopular={false}
                             />
                         ) : (
-                            <div className="grid grid-cols-1 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Pro Plan */}
                                 <PricingCard
-                                    name="Monthly"
-                                    price="Pay what you want"
-                                    description="Support the project monthly."
-                                    features={["14-day free trial", "Unlimited Posts", "Priority Support"]}
+                                    name="Pro"
+                                    price="$29"
+                                    description="For serious creators."
+                                    features={["3 Posts/day", "Basic Analytics", "No Shorts"]}
                                     buttonText="Subscribe"
-                                    productId="585a7590-d6dc-4bd5-b2ce-df7d29ae57ce"
-                                    isPopular={true}
-                                />
-                                <PricingCard
-                                    name="Lifetime"
-                                    price="$999"
-                                    description="One-time payment forever."
-                                    features={["All Monthly features", "No recurring fees", "Founder badge"]}
-                                    buttonText="Get Lifetime Access"
-                                    productId="6f0dcd25-6b07-4cac-bb10-151b03435bbb"
+                                    productId={process.env.POLAR_PRODUCT_ID_PRO || ""}
                                     isPopular={false}
+                                />
+
+                                {/* Agency Monthly */}
+                                <PricingCard
+                                    name="Agency"
+                                    price="$99"
+                                    description="Ultimate power & video."
+                                    features={["Unlimited Posts", "Advanced Analytics", "Unlimited Shorts", "Commercial Rights"]}
+                                    buttonText="Subscribe"
+                                    productId={process.env.POLAR_PRODUCT_ID_AGENCY_MONTHLY || ""}
+                                    isPopular={false}
+                                />
+
+                                {/* Agency Yearly - Early Bird */}
+                                <PricingCard
+                                    name="Agency Yearly"
+                                    price="$399"
+                                    description="Limited Time Founder's Deal."
+                                    features={["Everything in Agency", "4 months free", "Founder Badge"]}
+                                    buttonText="Get Yearly Deal"
+                                    productId={process.env.POLAR_PRODUCT_ID_AGENCY_YEARLY || ""}
+                                    isPopular={true}
                                 />
                             </div>
                         )}

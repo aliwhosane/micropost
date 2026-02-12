@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
 import { FeatureGuard } from "@/components/dashboard/FeatureGuard";
+import { getSubscriptionTier } from "@/lib/subscription";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
@@ -15,10 +16,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     const user = session?.user?.email ? await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { subscriptionStatus: true }
+        select: {
+            subscriptionStatus: true,
+            subscriptionPlanId: true
+        }
     }) : null;
 
-    const isSubscribed = user?.subscriptionStatus === "active" || user?.subscriptionStatus === "trialing";
+    const tier = getSubscriptionTier(user || {});
+    const isSubscribed = tier !== "STARTER"; // Backwards compatibility for now
 
     return (
         <div className="min-h-screen flex bg-background">
@@ -34,9 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     </div>
                 </header>
                 <main className="flex-1 p-6 overflow-auto">
-                    <FeatureGuard isSubscribed={isSubscribed}>
-                        {children}
-                    </FeatureGuard>
+                    {children}
                     <OnboardingTour />
                 </main>
             </div>

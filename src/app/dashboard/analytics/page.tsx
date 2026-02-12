@@ -4,12 +4,49 @@ import { redirect } from "next/navigation";
 import { StatCard } from "@/components/analytics/StatCard";
 import { ActivityChart } from "@/components/analytics/ActivityChart";
 import { BarChart3, TrendingUp, Share2, Layers } from "lucide-react";
+import { getSubscriptionTier } from "@/lib/subscription";
+import { PremiumGate } from "@/components/dashboard/PremiumGate";
 
 export default async function AnalyticsPage() {
     const session = await auth();
     if (!session?.user?.id) return redirect("/login");
 
     const userId = session.user.id;
+
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { subscriptionStatus: true, subscriptionPlanId: true }
+    });
+
+    const tier = getSubscriptionTier(user || {});
+
+    if (tier === "STARTER") {
+        return (
+            <div className="space-y-8 p-8 max-w-7xl mx-auto relative min-h-screen">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+                    <PremiumGate
+                        title="Unlock Analytics"
+                        description="Track your growth, engagement, and consistency with Pro Analytics."
+                        features={["Engagement Trends", "Consistency Score", "Platform Breakdown", "Growth Tracking"]}
+                        requiredTier="PRO"
+                    />
+                </div>
+                {/* Blurred Preview Background */}
+                <div className="space-y-8 filter blur-md pointer-events-none opacity-50 select-none">
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Analytics</h1>
+                        <p className="text-on-surface-variant">Track your content performance and growth.</p>
+                    </div>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                        <StatCard label="Total Posts" value={128} trend="+12%" trendType="up" icon={<Layers className="w-6 h-6" />} />
+                        <StatCard label="Published" value={42} trend="+5%" trendType="up" icon={<Share2 className="w-6 h-6" />} />
+                        <StatCard label="Est. Reach" value="12.5k" trend="+8%" trendType="up" icon={<TrendingUp className="w-6 h-6" />} />
+                        <StatCard label="Consistency" value={85} trend="Good" trendType="up" icon={<BarChart3 className="w-6 h-6" />} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Fetch metrics
     const totalPosts = await prisma.post.count({

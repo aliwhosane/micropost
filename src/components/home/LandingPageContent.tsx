@@ -36,7 +36,15 @@ import {
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { useRef } from "react";
 
-export function LandingPageContent() {
+interface LandingPageContentProps {
+    productIds: {
+        pro: string;
+        agencyMonthly: string;
+        agencyYearly: string;
+    }
+}
+
+export function LandingPageContent({ productIds }: LandingPageContentProps) {
     const targetRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: targetRef,
@@ -552,46 +560,46 @@ export function LandingPageContent() {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="max-w-5xl mx-auto"
+                    className="max-w-7xl mx-auto"
                 >
                     <div className="text-center mb-16 space-y-4">
                         <h2 className="text-4xl font-bold tracking-tight text-on-surface">Fair & Simple Pricing</h2>
                         <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-                            We believe in accessibility. Choose the plan that makes sense for you.
+                            Choose the plan that fits your growth stage.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        {/* Monthly - Pay What You Want */}
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {/* Pro Plan */}
                         <Card className="border-outline-variant/40 bg-surface h-full flex flex-col hover:border-primary/50 transition-colors">
                             <CardHeader>
-                                <CardTitle className="text-xl font-medium text-on-surface-variant">Community Plan</CardTitle>
+                                <CardTitle className="text-xl font-medium text-on-surface-variant">Pro</CardTitle>
                                 <div className="mt-4">
-                                    <span className="text-4xl font-bold text-on-surface">Pay what you want</span>
+                                    <span className="text-4xl font-bold text-on-surface">$29</span>
                                     <span className="text-on-surface-variant ml-2">/ month</span>
                                 </div>
                                 <CardDescription className="pt-2">
-                                    Value-based pricing for everyone.
+                                    For serious creators.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Full access to all AI features</span>
+                                        <span>3 Posts per day</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Unlimited topic generation</span>
+                                        <span>Basic Analytics</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Cancel anytime</span>
+                                        <span>Unlimited Topic Gen</span>
                                     </li>
                                 </ul>
                             </CardContent>
                             <div className="p-6 pt-0 mt-auto">
-                                <Link href="/login">
+                                <Link href={`/checkout/${productIds.pro}`}>
                                     <Button variant="outlined" className="w-full h-12 text-base">
                                         Get Started
                                     </Button>
@@ -599,45 +607,89 @@ export function LandingPageContent() {
                             </div>
                         </Card>
 
-                        {/* Lifetime Deal */}
-                        <Card className="border-primary bg-primary/5 h-full flex flex-col relative overflow-hidden transform md:scale-105 shadow-xl">
+                        {/* Agency Monthly */}
+                        <Card className="border-primary bg-primary/5 h-full flex flex-col relative overflow-hidden transform md:scale-105 shadow-xl z-10">
                             <div className="absolute top-0 right-0 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-bl-xl">
-                                BEST VALUE
+                                MOST POPULAR
                             </div>
                             <CardHeader>
-                                <CardTitle className="text-xl font-bold text-primary">Founding Member</CardTitle>
+                                <CardTitle className="text-xl font-bold text-primary">Agency</CardTitle>
                                 <div className="mt-4">
-                                    <span className="text-4xl font-bold text-on-surface">$999</span>
-                                    <span className="text-on-surface-variant ml-2">/ one-time</span>
+                                    <span className="text-4xl font-bold text-on-surface">$99</span>
+                                    <span className="text-on-surface-variant ml-2">/ month</span>
                                 </div>
                                 <CardDescription className="pt-2">
-                                    Pay once, own it forever.
+                                    Ultimate power & video tools.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span><b>Lifetime access</b> to Micropost AI</span>
+                                        <span><b>Unlimited</b> Posts</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>All future updates included</span>
+                                        <span><b>ShortsMaker</b> (Video)</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Priority support channel</span>
+                                        <span>Advanced Analytics</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Early access to new features</span>
+                                        <span>Commercial Usage Rights</span>
                                     </li>
                                 </ul>
                             </CardContent>
                             <div className="p-6 pt-0 mt-auto">
-                                <Link href="/login">
+                                <Link href={`/checkout/${productIds.agencyMonthly}`}>
                                     <Button variant="filled" className="w-full h-12 text-base shadow-primary/25 shadow-lg">
-                                        Get Lifetime Access
+                                        Subscribe Now
+                                    </Button>
+                                </Link>
+                            </div>
+                        </Card>
+
+                        {/* Agency Yearly */}
+                        <Card className="border-tertiary/50 bg-tertiary/5 h-full flex flex-col relative overflow-hidden hover:border-tertiary transition-colors">
+                            <div className="absolute top-0 right-0 bg-tertiary text-on-tertiary text-xs font-bold px-3 py-1 rounded-bl-xl">
+                                BEST VALUE
+                            </div>
+                            <CardHeader>
+                                <CardTitle className="text-xl font-bold text-tertiary">Agency Yearly</CardTitle>
+                                <div className="mt-4">
+                                    <span className="text-4xl font-bold text-on-surface">$399</span>
+                                    <span className="text-on-surface-variant ml-2">/ year</span>
+                                </div>
+                                <CardDescription className="pt-2">
+                                    Founder's Deal (Limited Time).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <ul className="space-y-3 pt-4">
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span><b>Everything in Agency</b></span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>4 Months Free</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>Founder Badge</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>Priority Support</span>
+                                    </li>
+                                </ul>
+                            </CardContent>
+                            <div className="p-6 pt-0 mt-auto">
+                                <Link href={`/checkout/${productIds.agencyYearly}`}>
+                                    <Button variant="outlined" className="w-full h-12 text-base border-tertiary/50 text-tertiary hover:bg-tertiary/10">
+                                        Get Yearly Deal
                                     </Button>
                                 </Link>
                             </div>
