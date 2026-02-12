@@ -22,43 +22,51 @@ export function Sidebar() {
     ];
 
     return (
-        <aside className="w-64 border-r border-outline-variant/20 bg-surface hidden md:flex flex-col h-screen sticky top-0">
-            <div className="h-16 flex items-center px-6 border-b border-outline-variant/10">
-                <Link href="/dashboard">
-                    <BrandLogo />
-                </Link>
-            </div>
-
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                <div className="mb-4">
-                    <p className="px-4 text-xs font-medium text-on-surface-variant/50 uppercase tracking-wider mb-2">Platform</p>
-                    {navigation.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link key={item.name} href={item.href} className="block mb-1">
-                                <Button
-                                    variant={isActive ? "tonal" : "text"}
-                                    className={cn(
-                                        "w-full justify-start",
-                                        isActive ? "bg-secondary-container text-on-secondary-container" : "text-on-surface-variant hover:text-on-surface"
-                                    )}
-                                >
-                                    <item.icon className="mr-3 h-5 w-5" />
-                                    {item.name}
-                                </Button>
-                            </Link>
-                        );
-                    })}
+        <aside className="w-72 hidden md:flex flex-col h-screen sticky top-0 p-4">
+            <div className="bg-surface rounded-[2rem] shadow-sm h-full flex flex-col border border-outline-variant/10">
+                <div className="h-20 flex items-center px-8">
+                    <Link href="/dashboard">
+                        <BrandLogo />
+                    </Link>
                 </div>
-            </nav>
 
-            <div className="p-4 border-t border-outline-variant/10">
-                <form action={signOutAction}>
-                    <Button variant="text" className="w-full justify-start text-on-surface-variant hover:text-error">
-                        <LogOut className="mr-3 h-5 w-5" />
-                        Sign out
-                    </Button>
-                </form>
+                <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+                    <div className="mb-6">
+                        <p className="px-6 text-xs font-bold text-primary uppercase tracking-widest mb-4 mt-4 opacity-80">Platform</p>
+                        {navigation.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link key={item.name} href={item.href} className="block mb-2">
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start h-12 rounded-2xl text-base font-medium transition-all duration-300",
+                                            isActive
+                                                ? "bg-primary/10 text-primary-dark shadow-sm hover:bg-primary/20"
+                                                : "text-on-surface-variant hover:bg-surface-variant/50 hover:pl-5 hover:text-on-surface"
+                                        )}
+                                    >
+                                        <div className={cn("p-2 rounded-xl mr-3", isActive ? "bg-primary/20" : "bg-transparent")}>
+                                            <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-on-surface-variant")} />
+                                        </div>
+                                        {item.name}
+                                    </Button>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </nav>
+
+                <div className="p-4 mt-auto">
+                    <div className="mx-4 mb-4 pt-4 border-t border-outline-variant/10">
+                        <form action={signOutAction}>
+                            <Button variant="ghost" className="w-full justify-start text-on-surface-variant hover:text-error hover:bg-error/10 rounded-2xl h-12">
+                                <LogOut className="mr-3 h-5 w-5" />
+                                Sign out
+                            </Button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </aside>
     );

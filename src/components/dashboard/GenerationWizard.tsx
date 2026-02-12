@@ -102,7 +102,7 @@ export function GenerationWizard() {
                             Choose a Framework
                         </label>
                         <Select value={framework} onValueChange={setFramework}>
-                            <SelectTrigger className="w-full bg-surface">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select a framework (Optional)" />
                             </SelectTrigger>
                             <SelectContent>
@@ -125,7 +125,7 @@ export function GenerationWizard() {
                         </label>
                         <Textarea
                             placeholder="E.g. 'I just read an article about Vercel v0, let's talk about AI coding tools today.'"
-                            className="bg-surface resize-none h-24"
+                            className="resize-none h-24"
                             value={thoughts}
                             onChange={(e) => setThoughts(e.target.value)}
                         />

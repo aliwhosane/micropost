@@ -131,7 +131,7 @@ export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE" | 
 
             {isNote && (
                 <div style={{ marginTop: "auto", fontSize: "16px", color: "#52525b" }}>
-                    micropost.ai
+                    micropost-ai.com
                 </div>
             )}
         </div>
@@ -334,7 +334,7 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
             {/* Safe Area Bottom */}
             <div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '32px' }}>
-                    www.micropost-ai.vercel.app
+                    www.micropost-ai.com
                 </div>
             </div >
         </div>

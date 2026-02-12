@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 export interface ButtonProps extends HTMLMotionProps<"button"> {
-    variant?: "filled" | "tonal" | "outlined" | "text" | "elevated";
+    variant?: "filled" | "tonal" | "outlined" | "text" | "elevated" | "ghost";
     size?: "default" | "sm" | "lg" | "icon";
     isLoading?: boolean;
 }
@@ -24,6 +24,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             outlined: "border border-outline text-primary hover:bg-primary/10 active:bg-primary/20",
             text: "text-primary hover:bg-primary/10 active:bg-primary/20",
             elevated: "bg-surface-container-low text-primary shadow-sm hover:shadow-md hover:bg-primary/5",
+            ghost: "text-on-surface hover:bg-surface-variant/30 active:bg-surface-variant/50",
         };
 
         const sizes = {

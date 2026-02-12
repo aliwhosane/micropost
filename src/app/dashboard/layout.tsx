@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UserButton } from "@/components/dashboard/UserButton";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
@@ -24,10 +25,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Sidebar />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                <header className="h-16 border-b border-outline-variant/20 flex items-center justify-between px-6 bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-                    <h1 className="text-xl font-semibold text-on-surface">Dashboard</h1>
-                    <div className="flex items-center gap-4">
+            <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+                <header className="h-20 flex items-center justify-between px-8 bg-transparent sticky top-0 z-10">
+                    <h1 className="text-2xl font-bold text-on-surface tracking-tight">Dashboard</h1>
+                    <div className="flex items-center gap-4 bg-surface/50 backdrop-blur-md p-2 pl-4 pr-2 rounded-full border border-outline-variant/10 shadow-sm">
+                        <span className="text-sm font-medium text-on-surface-variant mr-2 hidden sm:block">Welcome back</span>
                         <UserButton user={session?.user} />
                     </div>
                 </header>
@@ -35,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     <FeatureGuard isSubscribed={isSubscribed}>
                         {children}
                     </FeatureGuard>
+                    <OnboardingTour />
                 </main>
             </div>
         </div>

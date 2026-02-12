@@ -218,7 +218,7 @@ export function LandingPageContent() {
                         </div>
                         <motion.div style={{ opacity, scale }} className="relative">
                             <div className="absolute inset-0 bg-gradient-to-bl from-secondary/20 to-transparent blur-3xl -z-10 rounded-full" />
-                            <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
+                            <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
                                 <div className="flex items-center gap-4 mb-4 border-b border-outline-variant/20 pb-4">
                                     <Mail className="text-secondary h-6 w-6" />
                                     <div>
@@ -241,7 +241,7 @@ export function LandingPageContent() {
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         <motion.div style={{ opacity, scale }} className="order-2 md:order-1 relative">
                             <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-transparent blur-3xl -z-10 rounded-full" />
-                            <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 group">
+                            <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 group">
                                 <div className="space-y-4">
                                     <div className="flex gap-2 items-center text-sm font-mono text-on-surface-variant/80 bg-surface-variant/50 p-3 rounded-lg">
                                         <Wand2 className="h-4 w-4 text-purple-500" />
@@ -435,7 +435,7 @@ export function LandingPageContent() {
                         <Link href="/tools/cold-dm-writer">
                             <motion.div
                                 whileHover={{ y: -5 }}
-                                className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group h-full relative overflow-hidden"
+                                className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/10 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group h-full relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <Send className="h-24 w-24 -mr-8 -mt-8 text-indigo-500" />

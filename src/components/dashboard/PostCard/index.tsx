@@ -136,9 +136,9 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     return (
         <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-xl border transition-all duration-300 group
-                ${isCompact ? "p-3 gap-2" : "p-5 gap-4"}
-                bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 shadow-sm hover:shadow-lg
+            className={`relative flex flex-col rounded-[2rem] border transition-all duration-300 group
+                ${isCompact ? "p-4 gap-3" : "p-6 gap-5"}
+                bg-surface border-outline-variant/10 hover:border-primary/20 shadow-sm hover:shadow-md
             `}
         >
 

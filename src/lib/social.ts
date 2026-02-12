@@ -32,13 +32,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at; // Integer timestamp in seconds
             const now = Math.floor(Date.now() / 1000);
 
-            // 1. Check if ALREADY expired
-            if (expiresAt && now >= expiresAt) {
-                console.error("Twitter token has expired. User needs to re-authenticate.");
-                throw new Error("Twitter session expired. Please sign out and sign in again.");
-            }
-
-            // If expired or about to expire (within 24 hours), refresh
+            // 1. Refresh if expired or about to expire (within 24 hours)
             if (expiresAt && (expiresAt - now < 86400) && account.refresh_token) {
                 console.log("Twitter token expired or close to expiration. Refreshing...");
                 try {
@@ -72,9 +66,15 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     if (refreshError.code) console.error("Refresh Error Code:", refreshError.code);
                     if (refreshError.data) console.error("Refresh Error Data:", JSON.stringify(refreshError.data, null, 2));
 
-                    // If refresh fails, we might still try with old token or throw
-                    // throw new Error("Failed to refresh Twitter token"); // Let it fail on usage or pass if lucky
+                    // Check below will catch if it is still expired
                 }
+            }
+
+            // 2. Check if ALREADY expired and NOT refreshed
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("Twitter token has expired and could not be refreshed. User needs to re-authenticate.");
+                throw new Error("Twitter session expired. Please sign out and sign in again.");
             }
 
             if (!accessToken) throw new Error("No access token available for Twitter");
@@ -117,13 +117,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at;
             const now = Math.floor(Date.now() / 1000);
 
-            // 1. Check if ALREADY expired
-            if (expiresAt && now >= expiresAt) {
-                console.error("LinkedIn token has expired. User needs to re-authenticate.");
-                throw new Error("LinkedIn session expired. Please sign out and sign in again.");
-            }
-
-            // 2. Refresh if within 7 days of expiry (LinkedIn tokens last 60 days)
+            // 1. Refresh if within 7 days of expiry (or already expired)
             // 7 days = 7 * 24 * 60 * 60 = 604800 seconds
             if (expiresAt && (expiresAt - now < 604800) && account.refresh_token) {
                 console.log("LinkedIn token is within 7 days of expiration. Refreshing...");
@@ -163,9 +157,76 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 }
             }
 
+            // 2. Strict Check: If still expired after refresh attempt, fail.
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("LinkedIn token has expired. User needs to re-authenticate.");
+                throw new Error("LinkedIn session expired. Please sign out and sign in again.");
+            }
+
             if (!accessToken) throw new Error("No access token available for LinkedIn");
 
             const urn = account.providerAccountId; // Ensure this is stored correctly by NextAuth
+
+            // Prepare content payload
+            let shareContent: any = {
+                shareCommentary: {
+                    text: post.content,
+                },
+                shareMediaCategory: "NONE",
+            };
+
+            // Image Upload Handling
+            if (post.imageUrl && post.imageUrl.startsWith("data:")) {
+                try {
+                    // Step 1: Register Upload
+                    const registerResponse = await axios.post(
+                        "https://api.linkedin.com/v2/assets?action=registerUpload",
+                        {
+                            registerUploadRequest: {
+                                recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+                                owner: `urn:li:person:${urn}`,
+                                serviceRelationships: [{
+                                    relationshipType: "OWNER",
+                                    identifier: "urn:li:userGeneratedContent"
+                                }]
+                            }
+                        },
+                        { headers: { Authorization: `Bearer ${accessToken}` } }
+                    );
+
+                    const uploadUrl = registerResponse.data.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+                    const assetUrn = registerResponse.data.value.asset;
+
+                    console.log("LinkedIn Upload URL obtained:", uploadUrl);
+
+                    // Step 2: Upload Image Binary
+                    const base64Data = post.imageUrl.split(",")[1];
+                    const buffer = Buffer.from(base64Data, "base64");
+
+                    await axios.put(uploadUrl, buffer, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            "Content-Type": "image/png"
+                        }
+                    });
+
+                    console.log("LinkedIn Image uploaded successfully");
+
+                    // Step 3: Configure Share Content
+                    shareContent.shareMediaCategory = "IMAGE";
+                    shareContent.media = [{
+                        status: "READY",
+                        description: { text: "Image" },
+                        media: assetUrn,
+                        title: { text: "Image" }
+                    }];
+
+                } catch (imageError) {
+                    console.error("Failed to upload image to LinkedIn:", imageError);
+                    throw new Error("Failed to upload image to LinkedIn");
+                }
+            }
 
             await axios.post(
                 "https://api.linkedin.com/v2/ugcPosts",
@@ -175,12 +236,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     // LinkedIn URN format: urn:li:person:123456
                     lifecycleState: "PUBLISHED",
                     specificContent: {
-                        "com.linkedin.ugc.ShareContent": {
-                            shareCommentary: {
-                                text: post.content,
-                            },
-                            shareMediaCategory: "NONE",
-                        },
+                        "com.linkedin.ugc.ShareContent": shareContent
                     },
                     visibility: {
                         "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
@@ -203,16 +259,10 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at;
             const now = Math.floor(Date.now() / 1000);
 
-            // 1. Check if ALREADY expired
-            if (expiresAt && now >= expiresAt) {
-                console.error("Threads token has expired. User needs to re-authenticate.");
-                throw new Error("Threads session expired. Please sign out and sign in again.");
-            }
-
-            // 2. Refresh if within 30 days of expiry (Threads tokens are valid for 60 days)
+            // 1. Refresh if within 30 days of expiry (or already expired)
             // 30 days = 30 * 24 * 60 * 60 = 2,592,000 seconds
             if (expiresAt && (expiresAt - now < 2592000)) {
-                console.log("Threads token is within 30 days of expiration. Refreshing...");
+                console.log("Threads token is compatible for refresh. Refreshing...");
                 try {
                     const refreshResponse = await axios.get("https://graph.threads.net/refresh_access_token", {
                         params: {
@@ -247,8 +297,15 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 }
             }
 
+            // 2. Strict Check: If still expired after refresh attempt, fail.
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("Threads token has expired. User needs to re-authenticate.");
+                throw new Error("Threads session expired. Please sign out and sign in again.");
+            }
+
             // Step 1: Create a media container
-            const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost.vercel.app"}/api/images/${post.id}`;
+            const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost-ai.com"}/api/images/${post.id}`;
 
             const containerParams: any = {
                 text: post.content,

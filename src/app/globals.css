@@ -34,11 +34,11 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 28px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 40px;
 
   --animate-fade-in: fade-in 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
   --animate-slide-up: slide-up 0.4s cubic-bezier(0.2, 0.0, 0, 1.0);
@@ -82,84 +82,101 @@
 }
 
 /* Material Design 3 Blue-centric Palette */
+/* Headspace-Inspired Palette */
+/* Warm, Friendly, Soft */
+
+/* Light Theme */
 :root {
-  /* Light Theme */
-  --md-sys-color-primary: #005AC1;
+  --md-sys-color-primary: #FF8C42;
+  /* Warm Coral/Orange */
   --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #D8E2FF;
-  --md-sys-color-on-primary-container: #001A41;
+  --md-sys-color-primary-container: #FFE0CF;
+  --md-sys-color-on-primary-container: #5E2A00;
 
-  --md-sys-color-secondary: #575E71;
+  --md-sys-color-secondary: #4A8893;
+  /* Calming Teal */
   --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #DBE2F9;
-  --md-sys-color-on-secondary-container: #141B2C;
+  --md-sys-color-secondary-container: #D0F8FF;
+  --md-sys-color-on-secondary-container: #00363D;
 
-  --md-sys-color-tertiary: #715573;
-  --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #FBD7FC;
-  --md-sys-color-on-tertiary-container: #29132D;
+  --md-sys-color-tertiary: #FFC857;
+  /* Sunny Yellow */
+  --md-sys-color-on-tertiary: #452B00;
+  --md-sys-color-tertiary-container: #FFE5A0;
+  --md-sys-color-on-tertiary-container: #5C3A00;
 
   --md-sys-color-error: #BA1A1A;
   --md-sys-color-on-error: #FFFFFF;
   --md-sys-color-error-container: #FFDAD6;
   --md-sys-color-on-error-container: #410002;
 
-  --md-sys-color-background: #FEFBFF;
-  --md-sys-color-on-background: #1B1B1F;
+  --md-sys-color-background: #FFF9F5;
+  /* Soft Cream */
+  --md-sys-color-on-background: #2D3436;
+  /* Dark Slate Gray (Softer than black) */
 
-  --md-sys-color-surface: #FEFBFF;
-  --md-sys-color-on-surface: #1B1B1F;
-  --md-sys-color-surface-variant: #E1E2EC;
-  --md-sys-color-on-surface-variant: #44474F;
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-on-surface: #2D3436;
+  --md-sys-color-surface-variant: #F0EAE6;
+  /* Warm Light Grey/Beige */
+  --md-sys-color-on-surface-variant: #5D5652;
 
-  --md-sys-color-outline: #74777F;
-  --md-sys-color-outline-variant: #C4C6D0;
+  --md-sys-color-outline: #857D79;
+  --md-sys-color-outline-variant: #D7C2B4;
 
-  --md-sys-color-shadow: #000000;
+  --md-sys-color-shadow: #3E3028;
+  /* Warm Brown Shadow */
   --md-sys-color-scrim: #000000;
 
-  --md-sys-color-inverse-surface: #303033;
-  --md-sys-color-inverse-on-surface: #F2F0F4;
-  --md-sys-color-inverse-primary: #ADC6FF;
+  --md-sys-color-inverse-surface: #36302C;
+  --md-sys-color-inverse-on-surface: #F9EFE7;
+  --md-sys-color-inverse-primary: #FFB68E;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark Theme */
-    --md-sys-color-primary: #ADC6FF;
-    --md-sys-color-on-primary: #002E69;
-    --md-sys-color-primary-container: #004494;
-    --md-sys-color-on-primary-container: #D8E2FF;
+    /* Dark Theme - Warm Charcoal / Stone */
+    --md-sys-color-primary: #FFB68E;
+    --md-sys-color-on-primary: #542200;
+    --md-sys-color-primary-container: #793100;
+    --md-sys-color-on-primary-container: #FFDCC1;
 
-    --md-sys-color-secondary: #BFC6DC;
-    --md-sys-color-on-secondary: #293041;
-    --md-sys-color-secondary-container: #3F4759;
-    --md-sys-color-on-secondary-container: #DBE2F9;
+    --md-sys-color-secondary: #4CD9E8;
+    --md-sys-color-on-secondary: #00363D;
+    --md-sys-color-secondary-container: #004F58;
+    --md-sys-color-on-secondary-container: #97F0FF;
 
-    --md-sys-color-tertiary: #DEBCDF;
-    --md-sys-color-on-tertiary: #402843;
-    --md-sys-color-tertiary-container: #583E5B;
-    --md-sys-color-on-tertiary-container: #FBD7FC;
+    --md-sys-color-tertiary: #FFCB65;
+    --md-sys-color-on-tertiary: #472A00;
+    --md-sys-color-tertiary-container: #653E00;
+    --md-sys-color-on-tertiary-container: #FFDDAE;
 
     --md-sys-color-error: #FFB4AB;
     --md-sys-color-on-error: #690005;
     --md-sys-color-error-container: #93000A;
     --md-sys-color-on-error-container: #FFDAD6;
 
-    --md-sys-color-background: #1B1B1F;
-    --md-sys-color-on-background: #E3E2E6;
+    --md-sys-color-background: #0C0A09;
+    /* Stone 950 - Deep Warm Charcoal */
+    --md-sys-color-on-background: #FAFAFA;
+    /* Stone 50 */
 
-    --md-sys-color-surface: #1B1B1F;
-    --md-sys-color-on-surface: #E3E2E6;
-    --md-sys-color-surface-variant: #44474F;
-    --md-sys-color-on-surface-variant: #C4C6D0;
+    --md-sys-color-surface: #1C1917;
+    /* Stone 900 */
+    --md-sys-color-on-surface: #FAFAFA;
+    --md-sys-color-surface-variant: #292524;
+    /* Stone 800 */
+    --md-sys-color-on-surface-variant: #A8A29E;
+    /* Stone 400 */
 
-    --md-sys-color-outline: #8E9099;
-    --md-sys-color-outline-variant: #44474F;
+    --md-sys-color-outline: #78716C;
+    /* Stone 500 */
+    --md-sys-color-outline-variant: #44403D;
+    /* Stone 700 */
 
-    --md-sys-color-inverse-surface: #E3E2E6;
-    --md-sys-color-inverse-on-surface: #303033;
-    --md-sys-color-inverse-primary: #005AC1;
+    --md-sys-color-inverse-surface: #E7E5E4;
+    --md-sys-color-inverse-on-surface: #0C0A09;
+    --md-sys-color-inverse-primary: #9F5112;
   }
 }
 

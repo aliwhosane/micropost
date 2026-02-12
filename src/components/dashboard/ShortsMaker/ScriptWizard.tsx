@@ -109,16 +109,16 @@ export function ScriptWizard() {
     }, [renderedScenes, audioBase64]);
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-8 min-h-[600px]">
+        <div className="w-full max-w-4xl mx-auto p-6 bg-surface border border-outline-variant/50 rounded-[2rem] space-y-8 min-h-[600px] shadow-sm">
             {/* Progress Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <div className="flex items-center justify-between border-b border-outline-variant/50 pb-4">
                 <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <div className="bg-primary/10 p-2 rounded-2xl text-primary">
                         <Clapperboard className="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-white">ShortsMaker</h2>
-                        <p className="text-sm text-zinc-400">Text to Vertical Video Script</p>
+                        <h2 className="text-xl font-bold text-on-surface">ShortsMaker</h2>
+                        <p className="text-sm text-on-surface-variant">Text to Vertical Video Script</p>
                     </div>
                 </div>
 
@@ -135,13 +135,13 @@ export function ScriptWizard() {
                                     disabled={!isAccessible}
                                     className={cn(
                                         "px-3 py-1 rounded-full whitespace-nowrap transition-colors",
-                                        isActive ? "bg-primary/20 text-primary font-medium" :
-                                            isAccessible ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-700 cursor-not-allowed"
+                                        isActive ? "bg-primary/20 text-primary font-bold" :
+                                            isAccessible ? "text-on-surface-variant hover:text-on-surface" : "text-on-surface-variant/50 cursor-not-allowed"
                                     )}
                                 >
                                     {stepNum}. {s.charAt(0) + s.slice(1).toLowerCase()}
                                 </button>
-                                {i < stepOrder.length - 1 && <span className="text-zinc-700 mx-2">→</span>}
+                                {i < stepOrder.length - 1 && <span className="text-on-surface-variant/50 mx-2">→</span>}
                             </div>
                         );
                     })}
@@ -152,19 +152,19 @@ export function ScriptWizard() {
             {step === "TOPIC" && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">What is your video about?</label>
+                        <label className="text-sm font-medium text-on-surface-variant">What is your video about?</label>
                         <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Example: 3 tips for staying productive while working from home..."
-                            className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-white focus:ring-2 focus:ring-primary/50 outline-none resize-none"
+                            className="w-full h-40 bg-surface-variant/30 border border-transparent rounded-2xl p-4 text-on-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all placeholder:text-on-surface-variant/50"
                         />
                     </div>
                     <div className="flex gap-4">
                         <button
                             onClick={handleGenerateScript}
                             disabled={loadingState.script || !input}
-                            className="flex-1 py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                            className="flex-1 py-4 bg-primary hover:bg-primary/90 text-on-primary rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md hover:shadow-lg hover:shadow-primary/25"
                         >
                             {loadingState.script ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
                             {scriptData ? "Regenerate Script" : "Generate Script"}
@@ -174,13 +174,13 @@ export function ScriptWizard() {
                         {scriptData && (
                             <button
                                 onClick={() => setStep("SCRIPT")}
-                                className="px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                                className="px-8 py-4 bg-surface-variant/50 hover:bg-surface-variant text-on-surface rounded-full font-bold transition-all border border-outline-variant/10"
                             >
                                 Continue →
                             </button>
                         )}
                     </div>
-                    {scriptData && <p className="text-xs text-orange-400 text-center">*Regenerating will overwrite your current script.</p>}
+                    {scriptData && <p className="text-xs text-tertiary text-center">*Regenerating will overwrite your current script.</p>}
                 </div>
             )}
 
@@ -189,20 +189,20 @@ export function ScriptWizard() {
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-lg font-bold text-white">Review Script</h3>
-                            <p className="text-xs text-zinc-400">Edit the text below to refine your script.</p>
+                            <h3 className="text-lg font-bold text-on-surface">Review Script</h3>
+                            <p className="text-xs text-on-surface-variant">Edit the text below to refine your script.</p>
                         </div>
-                        <div className="text-xs font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
+                        <div className="text-xs font-mono text-on-surface-variant bg-surface-variant/50 border border-outline-variant/20 px-2 py-1 rounded-lg">
                             {scriptData.scenes.length} Scenes (~{scriptData.scenes.length * 5}s)
                         </div>
                     </div>
 
                     <div className="grid gap-4">
                         {scriptData.scenes.map((scene: any, idx: number) => (
-                            <div key={idx} className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 flex gap-4">
+                            <div key={idx} className="bg-surface-variant/30 border border-outline-variant/10 rounded-2xl p-4 flex gap-4 transition-all hover:bg-surface-variant/50">
                                 <div className="flex flex-col items-center gap-2 min-w-[60px]">
-                                    <span className="text-xs font-bold text-zinc-600 uppercase tracking-wider">{scene.type}</span>
-                                    <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 text-sm font-mono border border-zinc-800">
+                                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{scene.type}</span>
+                                    <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-on-surface-variant text-sm font-mono border border-outline-variant/20 shadow-sm">
                                         {idx + 1}
                                     </div>
                                 </div>
@@ -214,10 +214,10 @@ export function ScriptWizard() {
                                             newScenes[idx] = { ...scene, text: e.target.value };
                                             setScriptData({ ...scriptData, scenes: newScenes });
                                         }}
-                                        className="w-full bg-transparent text-white text-lg font-medium border-none p-0 focus:ring-0 resize-none"
+                                        className="w-full bg-transparent text-on-surface text-lg font-medium border-none p-0 focus:ring-0 resize-none placeholder:text-on-surface-variant/30"
                                         rows={Math.max(2, Math.ceil(scene.text.length / 50))}
                                     />
-                                    <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                    <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                                         <ImageIcon className="w-3 h-3" />
                                         <span>Visual Cue: {scene.visualCue}</span>
                                     </div>
@@ -226,21 +226,21 @@ export function ScriptWizard() {
                         ))}
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg flex items-center justify-between">
+                    <div className="bg-surface border border-outline-variant/50 p-4 rounded-2xl flex items-center justify-between shadow-sm">
                         <div>
-                            <h4 className="text-white font-medium">Visual Style</h4>
-                            <p className="text-xs text-zinc-400">Choose how your slides should look.</p>
+                            <h4 className="text-on-surface font-medium">Visual Style</h4>
+                            <p className="text-xs text-on-surface-variant">Choose how your slides should look.</p>
                         </div>
-                        <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                        <div className="flex bg-surface-variant/30 p-1 rounded-xl border border-outline-variant/10">
                             <button
                                 onClick={() => setVisualStyle("MINIMAL")}
-                                className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", visualStyle === "MINIMAL" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}
+                                className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all", visualStyle === "MINIMAL" ? "bg-surface text-on-surface shadow-sm" : "text-on-surface-variant hover:text-on-surface")}
                             >
                                 Minimal (Text)
                             </button>
                             <button
                                 onClick={() => setVisualStyle("CINEMATIC")}
-                                className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", visualStyle === "CINEMATIC" ? "bg-purple-600 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}
+                                className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all", visualStyle === "CINEMATIC" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface")}
                             >
                                 Cinematic (AI Images)
                             </button>
@@ -250,7 +250,7 @@ export function ScriptWizard() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setStep("TOPIC")}
-                            className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
+                            className="px-6 py-3 rounded-full border border-outline-variant/20 hover:bg-surface-variant/30 text-on-surface transition-all"
                         >
                             Back
                         </button>
@@ -258,7 +258,7 @@ export function ScriptWizard() {
                         <button
                             onClick={handleRenderVisuals}
                             disabled={loadingState.visuals}
-                            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-on-primary rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md hover:shadow-primary/25"
                         >
                             {loadingState.visuals ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
                             {renderedScenes.length > 0 ? "Regenerate Visuals" : `Render ${visualStyle === "CINEMATIC" ? "Cinematic" : "Minimal"} Storyboard`}
@@ -267,7 +267,7 @@ export function ScriptWizard() {
                         {renderedScenes.length > 0 && (
                             <button
                                 onClick={() => setStep("STORYBOARD")}
-                                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                                className="px-6 py-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface rounded-full font-bold transition-all border border-outline-variant/10"
                             >
                                 Continue →
                             </button>
@@ -279,7 +279,7 @@ export function ScriptWizard() {
             {/* Step 3: Visuals Preview */}
             {step === "STORYBOARD" && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                    <h3 className="text-lg font-bold text-white text-center">Your Storyboard</h3>
+                    <h3 className="text-lg font-bold text-on-surface text-center">Your Storyboard</h3>
                     {/* ... (scene list skipped for brevity, keeping existing logic) ... */}
                     <div className="flex gap-4 overflow-x-auto pb-6 snap-x min-h-[550px]">
                         {renderedScenes.map((scene: any, idx: number) => {
@@ -294,7 +294,7 @@ export function ScriptWizard() {
 
                             return (
                                 <div key={idx} className="snap-center shrink-0 w-[300px] flex flex-col gap-2 relative">
-                                    <div className="aspect-[9/16] bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl relative group">
+                                    <div className="aspect-[9/16] bg-black border border-outline-variant/10 rounded-2xl overflow-hidden shadow-lg relative group">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={scene.imageUrl} alt={`Scene ${idx + 1}`} className="w-full h-full object-cover" />
 
@@ -313,7 +313,7 @@ export function ScriptWizard() {
                                                         if (btn) (btn as HTMLButtonElement).click();
                                                     }
                                                 }}
-                                                className="p-2 bg-zinc-900/80 text-white rounded-full hover:bg-black border border-white/20 backdrop-blur-sm"
+                                                className="p-2 bg-surface/80 text-on-surface rounded-full hover:bg-surface border border-white/20 backdrop-blur-sm shadow-sm"
                                                 title="Edit Text"
                                             >
                                                 <ImageIcon className="w-4 h-4" />
@@ -322,32 +322,32 @@ export function ScriptWizard() {
                                             {/* Overlays Menu */}
                                             <div className="relative group/menu">
                                                 <button
-                                                    className="p-2 bg-zinc-900/80 text-white rounded-full hover:bg-black border border-white/20 backdrop-blur-sm"
+                                                    className="p-2 bg-surface/80 text-on-surface rounded-full hover:bg-surface border border-white/20 backdrop-blur-sm shadow-sm"
                                                     title="Add Overlays"
                                                 >
                                                     <Layers className="w-4 h-4" />
                                                 </button>
 
                                                 {/* Hover Menu for Overlays */}
-                                                <div className="absolute right-0 top-10 w-48 bg-zinc-950 border border-zinc-800 rounded-xl shadow-xl p-2 z-50 invisible group-hover/menu:visible opacity-0 group-hover/menu:opacity-100 transition-all">
-                                                    <p className="text-xs font-bold text-zinc-500 px-2 py-1 uppercase tracking-wider">Cinematic</p>
+                                                <div className="absolute right-0 top-10 w-48 bg-surface border border-outline-variant/10 rounded-xl shadow-xl p-2 z-50 invisible group-hover/menu:visible opacity-0 group-hover/menu:opacity-100 transition-all">
+                                                    <p className="text-xs font-bold text-on-surface-variant px-2 py-1 uppercase tracking-wider">Cinematic</p>
                                                     {["VIGNETTE", "FILM_GRAIN", "FLASH", "WATERMARK"].map(id => (
                                                         <button
                                                             key={id}
                                                             onClick={() => toggleOverlay(id)}
-                                                            className={cn("w-full text-left px-2 py-1.5 rounded text-xs flex items-center justify-between hover:bg-zinc-800", activeOverlays.includes(id) ? "text-primary" : "text-zinc-400")}
+                                                            className={cn("w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-surface-variant/30", activeOverlays.includes(id) ? "text-primary font-bold" : "text-on-surface-variant")}
                                                         >
                                                             {id.replace(/_/g, " ")}
                                                             {activeOverlays.includes(id) && <Check className="w-3 h-3" />}
                                                         </button>
                                                     ))}
-                                                    <div className="h-px bg-zinc-800 my-1" />
-                                                    <p className="text-xs font-bold text-zinc-500 px-2 py-1 uppercase tracking-wider">Engagement</p>
+                                                    <div className="h-px bg-outline-variant/10 my-1" />
+                                                    <p className="text-xs font-bold text-on-surface-variant px-2 py-1 uppercase tracking-wider">Engagement</p>
                                                     {["SUBSCRIBE", "LIKE_EXPLOSION", "CONFETTI", "WAIT_FOR_IT", "LINK_IN_BIO"].map(id => (
                                                         <button
                                                             key={id}
                                                             onClick={() => toggleOverlay(id)}
-                                                            className={cn("w-full text-left px-2 py-1.5 rounded text-xs flex items-center justify-between hover:bg-zinc-800", activeOverlays.includes(id) ? "text-primary" : "text-zinc-400")}
+                                                            className={cn("w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-surface-variant/30", activeOverlays.includes(id) ? "text-primary font-bold" : "text-on-surface-variant")}
                                                         >
                                                             {id.replace(/_/g, " ")}
                                                             {activeOverlays.includes(id) && <Check className="w-3 h-3" />}
@@ -359,7 +359,7 @@ export function ScriptWizard() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <p className="text-xs text-zinc-500 font-mono text-center">Scene {idx + 1}</p>
+                                        <p className="text-xs text-on-surface-variant font-mono text-center">Scene {idx + 1}</p>
                                         <button
                                             id={`regen-btn-${idx}`}
                                             onClick={async () => {
@@ -375,7 +375,7 @@ export function ScriptWizard() {
                                                 }
                                                 if (btn) btn.innerText = "Regenerate";
                                             }}
-                                            className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-400 rounded-lg transition-all"
+                                            className="w-full py-2 bg-surface-variant/30 hover:bg-surface-variant border border-outline-variant/10 text-xs text-on-surface-variant rounded-lg transition-all"
                                         >
                                             Update Image
                                         </button>
@@ -386,27 +386,27 @@ export function ScriptWizard() {
                     </div>
 
 
-                    <div className="flex items-center gap-4 pt-8 bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
+                    <div className="flex items-center gap-4 pt-8 bg-surface-variant/30 p-6 rounded-[2rem] border border-outline-variant/10">
                         {/* ... (Voice Select) ... */}
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-zinc-400">Select Voice</label>
-                            <div className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-                                <button onClick={() => setSelectedVoice("Puck")} className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Puck" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}>Male</button>
-                                <button onClick={() => setSelectedVoice("Kore")} className={cn("px-4 py-2 rounded-md text-sm font-medium transition-all", selectedVoice === "Kore" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300")}>Female</button>
+                            <label className="text-sm font-medium text-on-surface-variant">Select Voice</label>
+                            <div className="flex bg-surface p-1 rounded-xl border border-outline-variant/10">
+                                <button onClick={() => setSelectedVoice("Puck")} className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all", selectedVoice === "Puck" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface")}>Male</button>
+                                <button onClick={() => setSelectedVoice("Kore")} className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all", selectedVoice === "Kore" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface")}>Female</button>
                             </div>
                         </div>
 
                         <div className="flex-1 flex items-center gap-4 justify-end">
                             <button
                                 onClick={() => setStep("SCRIPT")}
-                                className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
+                                className="px-6 py-3 rounded-full border border-outline-variant/20 hover:bg-surface-variant/30 text-on-surface transition-all"
                             >
                                 Back
                             </button>
                             <button
                                 onClick={handleGenerateAudio}
                                 disabled={loadingState.audio}
-                                className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                className="px-8 py-3 bg-primary hover:bg-primary/90 text-on-primary rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md hover:shadow-primary/25"
                             >
                                 {loadingState.audio ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
                                 {audioBase64 ? "Regenerate Audio" : "Generate Audio & Preview"}
@@ -415,7 +415,7 @@ export function ScriptWizard() {
                             {audioBase64 && (
                                 <button
                                     onClick={() => setStep("PREVIEW")}
-                                    className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition-all border border-zinc-700"
+                                    className="px-6 py-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface rounded-full font-bold transition-all border border-outline-variant/10"
                                 >
                                     Continue →
                                 </button>
@@ -429,9 +429,9 @@ export function ScriptWizard() {
             {step === "PREVIEW" && remotionProps && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center">
                     {/* ... (Video Player Logic) ... */}
-                    <div className="bg-zinc-950 p-4 rounded-xl inline-block w-full max-w-sm mx-auto border border-zinc-800">
-                        <h3 className="text-white font-bold mb-4">Final Output</h3>
-                        <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden">
+                    <div className="bg-surface-variant/30 p-4 rounded-3xl inline-block w-full max-w-sm mx-auto border border-outline-variant/10 shadow-lg">
+                        <h3 className="text-on-surface font-bold mb-4">Final Output</h3>
+                        <div className="aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-inner">
                             <Player
                                 component={ShortsComposition}
                                 inputProps={{ scenes: remotionProps.scenes, audioUrl: remotionProps.audioUrl }}
@@ -445,7 +445,7 @@ export function ScriptWizard() {
                         </div>
                     </div>
 
-                    <div className="flex justify-center gap-4">
+                    <div className="flex justify-center gap-4 flex-wrap">
                         <button
                             onClick={() => {
                                 setStep("TOPIC");
@@ -455,7 +455,7 @@ export function ScriptWizard() {
                                 setAudioBase64(null);
                                 setInput("");
                             }}
-                            className="px-6 py-3 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-white transition-all"
+                            className="px-6 py-3 rounded-full border border-outline-variant/20 hover:bg-surface-variant/30 text-on-surface transition-all"
                         >
                             Start New
                         </button>
@@ -463,7 +463,7 @@ export function ScriptWizard() {
                         <button
                             onClick={handleGenerateAudio}
                             disabled={loadingState.audio}
-                            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+                            className="px-6 py-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface rounded-full font-bold flex items-center gap-2 transition-all disabled:opacity-50 border border-outline-variant/10"
                         >
                             {loadingState.audio ? <Loader2 className="w-5 h-5 animate-spin" /> : <Volume2 className="w-5 h-5" />}
                             Regenerate Audio
@@ -473,7 +473,7 @@ export function ScriptWizard() {
                             <a
                                 href={`data:audio/wav;base64,${audioBase64}`}
                                 download="micropost-voiceover.wav"
-                                className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all"
+                                className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-full font-bold flex items-center gap-2 transition-all shadow-md hover:shadow-green-500/25"
                             >
                                 <Download className="w-5 h-5" />
                                 Download Audio
@@ -548,7 +548,7 @@ export function ScriptWizard() {
                                 }
                             }}
                             disabled={renderStatus === "RENDERING"}
-                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-md hover:shadow-purple-500/25"
                         >
                             {renderStatus === "RENDERING" ? (
                                 <>
@@ -568,7 +568,7 @@ export function ScriptWizard() {
                                 href={renderUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all animate-in fade-in slide-in-from-left-4"
+                                className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-full font-bold flex items-center gap-2 transition-all animate-in fade-in slide-in-from-left-4 shadow-md hover:shadow-green-500/25"
                             >
                                 <Download className="w-5 h-5" />
                                 Download MP4
