@@ -142,10 +142,22 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     return (
         <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-[2rem] border transition-all duration-300 group
+            className={`relative flex flex-col rounded-[2rem] border transition-all duration-300 group/card cursor-pointer
                 ${isCompact ? "p-4 gap-3" : "p-6 gap-5"}
-                bg-surface border-outline-variant/10 hover:border-primary/20 shadow-sm hover:shadow-md
+                bg-surface border-outline-variant/10 shadow-sm 
+                hover:shadow-md hover:border-primary/20 hover:bg-surface-variant/10
             `}
+            onClick={(e) => {
+                // Prevent toggling if selecting text or clicking interactive elements
+                if (window.getSelection()?.toString().length) return;
+                // If isCompact is true, clicking anywhere expands it.
+                // If expanded, clicking non-interactive areas could collapse it? 
+                // Let's stick to "Click to expand" primarily. 
+                // User can use the chevron to collapse.
+                if (isCompact) {
+                    setIsCompact(false);
+                }
+            }}
         >
 
             {/* Selection Popover */}
@@ -235,15 +247,56 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             {/* VisionCraft / Image Attachment */}
             {/* Show selector if no image and status is pending/draft/failed */}
             {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && !isEditing && (
-                <div className="pt-2 border-t border-outline-variant/10">
+                <div className="pt-2 border-t border-outline-variant/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-in-out">
                     {!showVisionSelector ? (
-                        <button
-                            onClick={() => setShowVisionSelector(true)}
-                            className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-variant/30 w-full group"
-                        >
-                            <span className="text-lg group-hover:scale-110 transition-transform">✨</span>
-                            <span>Add Visual</span>
-                        </button>
+                        <div className="flex items-center gap-2 mt-1">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowVisionSelector(true);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-3 py-2 rounded-xl hover:bg-surface-variant/30 border border-transparent hover:border-outline-variant/20 group/btn"
+                            >
+                                <span className="text-lg group-hover/btn:scale-110 transition-transform">✨</span>
+                                <span>Add Visual</span>
+                            </button>
+
+                            {/* Custom Upload */}
+                            <label className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-3 py-2 rounded-xl hover:bg-surface-variant/30 border border-transparent hover:border-outline-variant/20 cursor-pointer group/btn">
+                                <span className="text-lg group-hover/btn:scale-110 transition-transform">📤</span>
+                                <span>Upload</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onClick={(e) => e.stopPropagation()} // Stop click propagation for input too
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+
+                                        const formData = new FormData();
+                                        formData.append("file", file);
+
+                                        toast.promise(
+                                            uploadImageAction(formData).then(async (res) => {
+                                                if (res.success && res.url) {
+                                                    setImageUrl(res.url);
+                                                    await savePostImageAction(id, res.url);
+                                                    router.refresh();
+                                                    return "Image uploaded!";
+                                                }
+                                                throw new Error(res.error);
+                                            }),
+                                            {
+                                                loading: 'Uploading...',
+                                                success: 'Image uploaded!',
+                                                error: 'Upload failed'
+                                            }
+                                        );
+                                    }}
+                                />
+                            </label>
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             <div className="flex justify-end">
@@ -268,43 +321,6 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                                 }}
                             />
                         </div>
-                    )}
-
-                    {/* Custom Upload */}
-                    {!showVisionSelector && (
-                        <label className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-variant/30 w-full cursor-pointer mt-1 group">
-                            <span className="text-lg group-hover:scale-110 transition-transform">📤</span>
-                            <span>Upload Image</span>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-
-                                    const formData = new FormData();
-                                    formData.append("file", file);
-
-                                    toast.promise(
-                                        uploadImageAction(formData).then(async (res) => {
-                                            if (res.success && res.url) {
-                                                setImageUrl(res.url);
-                                                await savePostImageAction(id, res.url);
-                                                router.refresh();
-                                                return "Image uploaded!";
-                                            }
-                                            throw new Error(res.error);
-                                        }),
-                                        {
-                                            loading: 'Uploading...',
-                                            success: 'Image uploaded!',
-                                            error: 'Upload failed'
-                                        }
-                                    );
-                                }}
-                            />
-                        </label>
                     )}
                 </div>
             )}

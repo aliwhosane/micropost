@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import Credentials from "next-auth/providers/credentials";
 import Twitter from "next-auth/providers/twitter";
 import LinkedIn from "next-auth/providers/linkedin";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
@@ -62,6 +63,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     scope: "openid profile email w_member_social",
                 },
             },
+        }),
+        Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
         }),
         {
             id: "threads",

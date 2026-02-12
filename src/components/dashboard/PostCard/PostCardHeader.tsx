@@ -45,20 +45,20 @@ export function PostCardHeader({
 
                 {/* Status Badges */}
                 {!isCompact && (
-                    <>
+                    <div className="flex gap-1">
                         {status === "PUBLISHED" && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">PUBLISHED</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/10">PUBLISHED</span>
                         )}
                         {status === "FAILED" && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">FAILED</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/10">FAILED</span>
                         )}
                         {(status === "APPROVED" && scheduledFor) && (
-                            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/10">
                                 <Clock className="w-3 h-3" />
                                 SCHEDULED
                             </span>
                         )}
-                    </>
+                    </div>
                 )}
 
                 {/* Toggle Button */}

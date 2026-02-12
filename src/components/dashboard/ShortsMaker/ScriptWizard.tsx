@@ -536,7 +536,7 @@ export function ScriptWizard({ initialContent }: { initialContent?: string }) {
                                                 console.error("Polling error:", pollErr);
                                                 setRenderStatus("ERROR");
                                             }
-                                        }, 2000);
+                                        }, 15000);
                                     } else {
                                         setRenderStatus("ERROR");
                                         alert("Failed to start render");
