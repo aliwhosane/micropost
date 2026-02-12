@@ -12,6 +12,14 @@ export default async function AnalyticsPage() {
     if (!session?.user?.id || !session.user.email) return redirect("/login");
 
     const userId = session.user.id;
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+
+    const whereBase = {
+        userId,
+        clientProfileId: activeClientId || null
+    };
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
@@ -50,23 +58,23 @@ export default async function AnalyticsPage() {
 
     // Fetch metrics
     const totalPosts = await prisma.post.count({
-        where: { userId }
+        where: whereBase
     });
 
     const publishedPosts = await prisma.post.count({
-        where: { userId, status: "PUBLISHED" }
+        where: { ...whereBase, status: "PUBLISHED" }
     });
 
     const twitterPosts = await prisma.post.count({
-        where: { userId, platform: "TWITTER" }
+        where: { ...whereBase, platform: "TWITTER" }
     });
 
     const linkedinPosts = await prisma.post.count({
-        where: { userId, platform: "LINKEDIN" }
+        where: { ...whereBase, platform: "LINKEDIN" }
     });
 
     const threadsPosts = await prisma.post.count({
-        where: { userId, platform: "THREADS" }
+        where: { ...whereBase, platform: "THREADS" }
     });
 
     // Mock Engagement Data (for now, as we don't have real engagement storage yet)
@@ -79,7 +87,7 @@ export default async function AnalyticsPage() {
 
     const postsLast30Days = await prisma.post.findMany({
         where: {
-            userId,
+            ...whereBase,
             createdAt: { gte: thirtyDaysAgo }
         },
         select: { createdAt: true }
@@ -141,7 +149,7 @@ export default async function AnalyticsPage() {
     // Fetch previous period stats
     const postsPreviousPeriod = await prisma.post.count({
         where: {
-            userId,
+            ...whereBase,
             createdAt: {
                 gte: previous30Days,
                 lt: thirtyDaysAgo
@@ -151,7 +159,7 @@ export default async function AnalyticsPage() {
 
     const publishedPreviousPeriod = await prisma.post.count({
         where: {
-            userId,
+            ...whereBase,
             status: "PUBLISHED",
             createdAt: {
                 gte: previous30Days,
@@ -169,14 +177,14 @@ export default async function AnalyticsPage() {
     // Re-fetch current *period* counts for accurate trend comparison
     const postsCurrentPeriod = await prisma.post.count({
         where: {
-            userId,
+            ...whereBase,
             createdAt: { gte: thirtyDaysAgo }
         }
     });
 
     const publishedCurrentPeriod = await prisma.post.count({
         where: {
-            userId,
+            ...whereBase,
             status: "PUBLISHED",
             createdAt: { gte: thirtyDaysAgo }
         }

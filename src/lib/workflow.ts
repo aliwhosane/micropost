@@ -2,8 +2,9 @@ import { prisma } from "@/lib/db";
 import { generateSocialPost, analyzeTrends } from "@/lib/ai";
 import { aggregateNews } from "@/lib/news";
 import { sendDailyDigest } from "@/lib/email";
+import { pLimit } from "@/lib/utils";
 
-export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string, manualFramework?: string, targetPlatforms?: string[]) {
+export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string, manualFramework?: string, targetPlatforms?: string[], clientId?: string) {
     console.log("Starting daily generation workflow...");
 
     // Helper to pick a weighted random framework
@@ -46,22 +47,56 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
     console.log(`Found ${users.length} eligible users. Target User ID: ${targetUserId || "ALL"}`);
 
-    const results = [];
+    const limit = pLimit(5); // Process 5 users concurrently
 
-    // 2. Process each user
-    for (const user of users) {
-        if (!user.email || !user.preferences) continue;
+    // 2. Process each user in parallel
+    const results = await Promise.all(users.map(user => limit(async () => {
+        if (!user.email || !user.preferences) return null;
 
-        const { postsPerDay, styleSample } = user.preferences;
-        const topicNames = user.topics.map((t: any) => t.name);
+        // Determine platforms & Settings
+        // If clientId is provided, we MUST check the Client's connected accounts and Preferences.
+        let availablePlatforms: string[] = [];
+        let clientContext: any = null;
 
-        // Determine platforms. If none connected, default to Twitter for demo.
-        // In real app maybe skip or notify.
-        const availablePlatforms: string[] = [];
-        if (user.accounts.some((a: any) => a.provider === "linkedin")) availablePlatforms.push("LINKEDIN");
-        if (user.accounts.some((a: any) => a.provider === "threads")) availablePlatforms.push("THREADS");
-        if (user.accounts.some((a: any) => a.provider === "twitter")) availablePlatforms.push("TWITTER");
-        if (availablePlatforms.length === 0) availablePlatforms.push("TWITTER"); // Fallback
+        let twitterCount = user.preferences.twitterPostsPerDay || 0;
+        let linkedinCount = user.preferences.linkedinPostsPerDay || 0;
+        let threadsCount = (user.preferences as any).threadsPostsPerDay || 0;
+        let styleSample = user.preferences.styleSample || "";
+        let activeTopics = user.topics.filter((t: any) => t.clientProfileId === null); // Default to personal
+
+        if (clientId) {
+            const client = await prisma.clientProfile.findUnique({
+                where: { id: clientId },
+                include: { accounts: true, topics: { where: { enabled: true } } } // Fetch client topics specifically if relation exists
+            }) as any;
+
+            if (client) {
+                clientContext = client;
+
+                // Override counts
+                twitterCount = client.twitterPostsPerDay || 0;
+                linkedinCount = client.linkedinPostsPerDay || 0;
+                threadsCount = client.threadsPostsPerDay || 0;
+                if (client.styleSample) styleSample = client.styleSample;
+
+                // Override topics
+                activeTopics = client.topics || [];
+
+                if (client.accounts.some((a: any) => a.provider === "linkedin")) availablePlatforms.push("LINKEDIN");
+                if (client.accounts.some((a: any) => a.provider === "threads")) availablePlatforms.push("THREADS");
+                if (client.accounts.some((a: any) => a.provider === "twitter")) availablePlatforms.push("TWITTER");
+            }
+        } else {
+            // Personal Brand -> Use User accounts and Personal topics
+            if (user.accounts.some((a: any) => a.provider === "linkedin")) availablePlatforms.push("LINKEDIN");
+            if (user.accounts.some((a: any) => a.provider === "threads")) availablePlatforms.push("THREADS");
+            if (user.accounts.some((a: any) => a.provider === "twitter")) availablePlatforms.push("TWITTER");
+        }
+
+        const topicNames = activeTopics.map((t: any) => t.name);
+
+        // Fallback for demo if no accounts connected at all? 
+        if (availablePlatforms.length === 0) availablePlatforms.push("TWITTER", "LINKEDIN");
 
         // Should function helper to check if we should run for this platform
         const shouldRunFor = (platform: string) => {
@@ -73,15 +108,14 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             return availablePlatforms.includes(platform);
         }
 
-        const generatedPosts = [];
+        const generatedPosts: any[] = [];
 
         // 2a. Fetch Trends for this user (Newsjacking Injection)
-        let newsContext = undefined;
+        let newsContext: any = undefined;
         try {
             // Only fetch if they have topics
             if (topicNames.length > 0) {
                 // Get trending news for user's topics (limit to 2 topics to avoid huge RSS fetch if they have many)
-                // actually aggregateNews handles array.
                 const newsItems = await aggregateNews(topicNames.slice(0, 3));
 
                 if (newsItems.length > 0) {
@@ -106,140 +140,168 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             console.error(`[TrendSurfer] Failed to fetch trends for user ${user.id}`, e);
         }
 
-        // 3. Generate Posts
+        // 3. Generate Posts Parallelly
+        const generationTasks = [];
 
-        // Twitter Generation Loop
-        const twitterCount = user.preferences.twitterPostsPerDay || 0;
-        if (shouldRunFor("TWITTER") && user.accounts.some((a: any) => a.provider === "twitter")) {
+        // Twitter Generation Tasks
+        const hasTwitter = clientContext
+            ? clientContext.accounts.some((a: any) => a.provider === "twitter")
+            : user.accounts.some((a: any) => a.provider === "twitter");
+
+        if (shouldRunFor("TWITTER") && (hasTwitter || availablePlatforms.includes("TWITTER"))) {
             for (let i = 0; i < twitterCount; i++) {
-                try {
-                    // Use manual framework if provided (manual generation), otherwise randomize
-                    const currentFramework = manualFramework || selectRandomFramework();
-
-                    const { content, topic } = await generateSocialPost({
-                        topics: topicNames,
-                        styleSample: styleSample || undefined,
-                        platform: "TWITTER",
-                        topicAttributes: user.topics.map((t: any) => ({
+                generationTasks.push(async () => {
+                    try {
+                        const currentFramework = manualFramework || selectRandomFramework();
+                        let currentStyle = styleSample;
+                        let currentTopicAttributes = activeTopics.map((t: any) => ({
                             name: t.name,
                             notes: t.notes,
                             stance: t.stance
-                        })),
-                        temporaryThoughts,
-                        newsContext,
-                        framework: currentFramework
-                    });
+                        }));
 
-                    // Save to Database
-                    const post = await prisma.post.create({
-                        data: {
-                            userId: user.id,
-                            content,
+                        let safeThoughts = temporaryThoughts;
+                        if (clientContext) {
+                            const ctx = clientContext as any;
+                            currentStyle = ctx.tone || styleSample;
+                            safeThoughts = safeThoughts ? safeThoughts + `\n\nClient Context: ${ctx.bio} - Niche: ${ctx.niche}`
+                                : `Client Context: ${ctx.bio} - Niche: ${ctx.niche}`;
+                        }
+
+                        const { content, topic } = await generateSocialPost({
+                            topics: topicNames,
+                            styleSample: currentStyle || undefined,
                             platform: "TWITTER",
-                            topic: topic,
-                            status: "PENDING",
-                        },
-                    });
+                            topicAttributes: currentTopicAttributes,
+                            temporaryThoughts: safeThoughts,
+                            newsContext,
+                            framework: currentFramework
+                        });
 
-                    generatedPosts.push({
-                        id: post.id,
-                        content: post.content,
-                        platform: post.platform!,
-                        topic: post.topic || topic,
-                    });
-                } catch (err) {
-                    console.error(`Failed to generate Twitter post for user ${user.id}:`, err);
-                }
+                        const post = await prisma.post.create({
+                            data: {
+                                userId: user.id,
+                                content,
+                                platform: "TWITTER",
+                                topic: topic,
+                                status: "PENDING",
+                                clientProfileId: clientId || null,
+                            } as any,
+                        });
+
+                        generatedPosts.push({
+                            id: post.id,
+                            content: post.content,
+                            platform: post.platform!,
+                            topic: post.topic || topic,
+                        });
+                    } catch (err) {
+                        console.error(`Failed to generate Twitter post for user ${user.id}:`, err);
+                    }
+                });
             }
         }
 
-        // LinkedIn Generation Loop
-        const linkedinCount = user.preferences.linkedinPostsPerDay || 0;
-        if (shouldRunFor("LINKEDIN") && user.accounts.some((a: any) => a.provider === "linkedin")) {
+        // LinkedIn Generation Tasks
+        const hasLinkedin = clientContext
+            ? clientContext.accounts.some((a: any) => a.provider === "linkedin")
+            : user.accounts.some((a: any) => a.provider === "linkedin");
+
+        if (shouldRunFor("LINKEDIN") && (hasLinkedin || availablePlatforms.includes("LINKEDIN"))) {
             for (let i = 0; i < linkedinCount; i++) {
-                try {
-                    const currentFramework = manualFramework || selectRandomFramework();
+                generationTasks.push(async () => {
+                    try {
+                        const currentFramework = manualFramework || selectRandomFramework();
 
-                    const { content, topic } = await generateSocialPost({
-                        topics: topicNames,
-                        styleSample: styleSample || undefined,
-                        platform: "LINKEDIN",
-                        topicAttributes: user.topics.map((t: any) => ({
-                            name: t.name,
-                            notes: t.notes,
-                            stance: t.stance
-                        })),
-                        temporaryThoughts,
-                        newsContext,
-                        framework: currentFramework
-                    });
-
-                    // Save to Database
-                    const post = await prisma.post.create({
-                        data: {
-                            userId: user.id,
-                            content,
+                        const { content, topic } = await generateSocialPost({
+                            topics: topicNames,
+                            styleSample: styleSample || undefined,
                             platform: "LINKEDIN",
-                            topic: topic,
-                            status: "PENDING",
-                        },
-                    });
+                            topicAttributes: activeTopics.map((t: any) => ({
+                                name: t.name,
+                                notes: t.notes,
+                                stance: t.stance
+                            })),
+                            temporaryThoughts,
+                            newsContext,
+                            framework: currentFramework
+                        });
 
-                    generatedPosts.push({
-                        id: post.id,
-                        content: post.content,
-                        platform: post.platform!,
-                        topic: post.topic || topic,
-                    });
-                } catch (err) {
-                    console.error(`Failed to generate LinkedIn post for user ${user.id}:`, err);
-                }
+                        const post = await prisma.post.create({
+                            data: {
+                                userId: user.id,
+                                content,
+                                platform: "LINKEDIN",
+                                topic: topic,
+                                status: "PENDING",
+                                clientProfileId: clientId || null,
+                            } as any,
+                        });
+
+                        generatedPosts.push({
+                            id: post.id,
+                            content: post.content,
+                            platform: post.platform!,
+                            topic: post.topic || topic,
+                        });
+                    } catch (err) {
+                        console.error(`Failed to generate LinkedIn post for user ${user.id}:`, err);
+                    }
+                });
             }
         }
 
-        // Threads Generation Loop
-        const threadsCount = (user.preferences as any).threadsPostsPerDay || 0;
-        if (shouldRunFor("THREADS") && user.accounts.some((a: any) => a.provider === "threads")) {
+        // Threads Generation Tasks
+        const hasThreads = clientContext
+            ? clientContext.accounts.some((a: any) => a.provider === "threads")
+            : user.accounts.some((a: any) => a.provider === "threads");
+
+        if (shouldRunFor("THREADS") && (hasThreads || availablePlatforms.includes("THREADS"))) {
             for (let i = 0; i < threadsCount; i++) {
-                try {
-                    const currentFramework = manualFramework || selectRandomFramework();
+                generationTasks.push(async () => {
+                    try {
+                        const currentFramework = manualFramework || selectRandomFramework();
 
-                    const { content, topic } = await generateSocialPost({
-                        topics: topicNames,
-                        styleSample: styleSample || undefined,
-                        platform: "THREADS",
-                        topicAttributes: user.topics.map((t: any) => ({
-                            name: t.name,
-                            notes: t.notes,
-                            stance: t.stance
-                        })),
-                        temporaryThoughts,
-                        newsContext,
-                        framework: currentFramework
-                    });
-
-                    // Save to Database
-                    const post = await prisma.post.create({
-                        data: {
-                            userId: user.id,
-                            content,
+                        const { content, topic } = await generateSocialPost({
+                            topics: topicNames,
+                            styleSample: styleSample || undefined,
                             platform: "THREADS",
-                            topic: topic,
-                            status: "PENDING",
-                        },
-                    });
+                            topicAttributes: activeTopics.map((t: any) => ({
+                                name: t.name,
+                                notes: t.notes,
+                                stance: t.stance
+                            })),
+                            temporaryThoughts,
+                            newsContext,
+                            framework: currentFramework
+                        });
 
-                    generatedPosts.push({
-                        id: post.id,
-                        content: post.content,
-                        platform: post.platform!,
-                        topic: post.topic || topic,
-                    });
-                } catch (err) {
-                    console.error(`Failed to generate Threads post for user ${user.id}:`, err);
-                }
+                        const post = await prisma.post.create({
+                            data: {
+                                userId: user.id,
+                                content,
+                                platform: "THREADS",
+                                topic: topic,
+                                status: "PENDING",
+                                clientProfileId: clientId || null,
+                            } as any,
+                        });
+
+                        generatedPosts.push({
+                            id: post.id,
+                            content: post.content,
+                            platform: post.platform!,
+                            topic: post.topic || topic,
+                        });
+                    } catch (err) {
+                        console.error(`Failed to generate Threads post for user ${user.id}:`, err);
+                    }
+                });
             }
         }
+
+        // Execute all generation tasks for this user in parallel
+        await Promise.all(generationTasks.map(task => task()));
 
         // 5. Send Daily Digest
         if (generatedPosts.length > 0) {
@@ -249,9 +311,10 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                 posts: generatedPosts,
                 approvalUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard`,
             });
-            results.push({ userId: user.id, success: true, count: generatedPosts.length, email: emailResult });
+            return { userId: user.id, success: true, count: generatedPosts.length, email: emailResult };
         }
-    }
+        return { userId: user.id, success: true, count: 0, email: null };
+    })));
 
-    return results;
+    return results.filter(r => r !== null);
 }

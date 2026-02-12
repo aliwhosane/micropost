@@ -10,9 +10,21 @@ export default async function TopicsPage() {
     const session = await auth();
     if (!session?.user?.email) return <div>Please log in</div>;
 
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+    console.log("Topics Page Debug:", { activeClientId });
+
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { topics: true },
+        include: {
+            topics: {
+                where: {
+                    clientProfileId: activeClientId || null
+                },
+                orderBy: { createdAt: 'desc' }
+            }
+        },
     });
 
     if (!user) return <div>User not found</div>;
@@ -40,11 +52,11 @@ export default async function TopicsPage() {
             </Card>
 
             <div className="grid gap-4 md:grid-cols-2">
-                {user.topics.map((topic: any) => (
+                {(user as any).topics.map((topic: any) => (
                     <TopicCard key={topic.id} topic={topic} />
                 ))}
 
-                {user.topics.length === 0 && (
+                {(user as any).topics.length === 0 && (
                     <div className="col-span-2 text-center py-12 text-on-surface-variant border-2 border-dashed border-outline-variant rounded-xl">
                         <PenTool className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No topics added yet. Add your first topic to get started!</p>

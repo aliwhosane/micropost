@@ -135,6 +135,21 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     }
 }
 
+export async function generatePostContent(
+    topic: string,
+    platform: "TWITTER" | "LINKEDIN" | "THREADS",
+    contextInstructions?: string,
+    styleTone?: string
+): Promise<string> {
+    const result = await generateSocialPost({
+        topics: [topic],
+        platform,
+        temporaryThoughts: contextInstructions, // Use context as "temporary thoughts" to steer the AI
+        styleSample: styleTone, // Use tone as style sample
+    });
+    return result.content;
+}
+
 export async function analyzeTrends(newsItems: any[]): Promise<any[]> {
 
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });

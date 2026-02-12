@@ -11,12 +11,21 @@ interface SocialConnectionProps {
     provider: "twitter" | "linkedin" | "threads";
     isConnected: boolean;
     isExpired?: boolean;
+    clientId?: string | null;
 }
 
-export function SocialConnection({ provider, isConnected, isExpired }: SocialConnectionProps) {
+export function SocialConnection({ provider, isConnected, isExpired, clientId }: SocialConnectionProps) {
     const [isLoading, setIsLoading] = useState(false);
     const handleConnect = async () => {
         setIsLoading(true);
+        // Set cookie so server-side linkAccount knows which profile to attach to
+        if (clientId) {
+            document.cookie = `micropost_connecting_client_id=${clientId}; path=/; max-age=300`;
+        } else {
+            // Clear it if connecting for personal (explicit null)
+            document.cookie = "micropost_connecting_client_id=; path=/; max-age=0";
+        }
+
         try {
             await signIn(provider, { callbackUrl: "/dashboard/settings" });
         } catch (error) {

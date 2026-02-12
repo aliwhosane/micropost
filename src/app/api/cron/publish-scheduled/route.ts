@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/db";
 import { publishToSocials } from "@/lib/social";
 import { NextResponse } from "next/server";
+import { pLimit } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
     try {
-        // Authenticate the cron request (optional, but recommended)
         // Authenticate the cron request (optional, but recommended)
         const authHeader = request.headers.get('authorization');
         if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -26,11 +26,11 @@ export async function GET(request: Request) {
 
         console.log(`Found ${postsToPublish.length} posts to publish.`);
 
-        const results = [];
+        const limit = pLimit(5); // Publish 5 posts concurrently
 
-        for (const post of postsToPublish) {
+        const results = await Promise.all(postsToPublish.map(post => limit(async () => {
             try {
-                if (!post.platform) continue;
+                if (!post.platform) return { id: post.id, status: "SKIPPED" };
 
                 const result = await publishToSocials({
                     id: post.id,
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
                             // scheduledFor: null // Optional: clear schedule or keep for history
                         },
                     });
-                    results.push({ id: post.id, status: "SUCCESS" });
+                    return { id: post.id, status: "SUCCESS" };
                 } else {
                     await prisma.post.update({
                         where: { id: post.id },
@@ -56,13 +56,13 @@ export async function GET(request: Request) {
                             status: "FAILED",
                         },
                     });
-                    results.push({ id: post.id, status: "FAILED", error: result.error });
+                    return { id: post.id, status: "FAILED", error: result.error };
                 }
             } catch (err: any) {
                 console.error(`Failed to publish post ${post.id}:`, err);
-                results.push({ id: post.id, status: "ERROR", error: err.message });
+                return { id: post.id, status: "ERROR", error: err.message };
             }
-        }
+        })));
 
         return NextResponse.json({ success: true, published: results.length, details: results });
     } catch (error: any) {

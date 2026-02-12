@@ -118,4 +118,50 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             return true;
         },
     },
+    events: {
+        async linkAccount({ user, account, profile }) {
+            try {
+                // 1. Capture Metadata
+                const p = profile as any;
+                let accountName = p.name || p.username || p.login; // GitHub uses login
+                let accountImage = p.image || p.picture || p.avatar_url;
+
+                // Provider specific mapping if needed
+                if (account.provider === "linkedin") {
+                    // LinkedIn profile structure might vary, but 'name' and 'picture' are standard OIDC
+                }
+
+                // 2. Check for Client Context cookie
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const clientId = cookieStore.get("micropost_connecting_client_id")?.value;
+
+                // 3. Update the Account record
+                // We use any cast for data because Prisma types might lag behind schema updates in IDE
+                await prisma.account.update({
+                    where: {
+                        provider_providerAccountId: {
+                            provider: account.provider,
+                            providerAccountId: account.providerAccountId
+                        }
+                    },
+                    data: {
+                        accountName: accountName,
+                        accountImage: accountImage,
+                        clientProfileId: clientId || null
+                    } as any
+                });
+
+                console.log(`Linked ${account.provider} account for user ${user.id}. Client: ${clientId || "Personal"}`);
+
+                // Clear the cookie
+                if (clientId) {
+                    cookieStore.delete("micropost_connecting_client_id");
+                }
+
+            } catch (error) {
+                console.error("Error in linkAccount event:", error);
+            }
+        }
+    }
 });

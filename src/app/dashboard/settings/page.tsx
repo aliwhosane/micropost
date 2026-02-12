@@ -11,18 +11,66 @@ import { ProfileOptimizerSection } from "@/components/dashboard/Settings/Profile
 import { PricingCard } from "@/components/settings/PricingCard";
 import { FormSlider } from "@/components/settings/FormSlider";
 
+import { ClientList } from "@/components/dashboard/ClientList";
+
 export default async function SettingsPage() {
     const session = await auth();
     if (!session?.user?.email) return <div>Please log in</div>;
 
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+    console.log("Settings Page Debug:", { activeClientId });
+
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { preferences: true, accounts: true },
+        include: {
+            preferences: true,
+            accounts: !activeClientId ? true : false // Only fetch user accounts if no client active
+        },
     });
 
     if (!user) return <div>User not found</div>;
 
-    const prefs = (user.preferences as any) || { postsPerDay: 1, twitterPostsPerDay: 1, linkedinPostsPerDay: 1, threadsPostsPerDay: 1, styleSample: "", linkedinConnected: false, twitterConnected: false, threadsConnected: false };
+    let prefs: any;
+    let accounts: any[] = [];
+    let isClientContext = false;
+
+    if (activeClientId) {
+        const client = await prisma.clientProfile.findUnique({
+            where: { id: activeClientId },
+            include: { accounts: true }
+        });
+
+        if (client) {
+            const ctx = client as any;
+            isClientContext = true;
+            prefs = {
+                postsPerDay: 1, // field missing on client, default 1
+                twitterPostsPerDay: ctx.twitterPostsPerDay,
+                linkedinPostsPerDay: ctx.linkedinPostsPerDay,
+                threadsPostsPerDay: ctx.threadsPostsPerDay,
+                styleSample: ctx.styleSample,
+                // Client doesn't have "connected" booleans, we derive from accounts
+            };
+            accounts = ctx.accounts;
+        }
+    }
+
+    // Fallback to User/Personal
+    if (!isClientContext) {
+        prefs = (user.preferences as any) || {
+            postsPerDay: 1,
+            twitterPostsPerDay: 1,
+            linkedinPostsPerDay: 1,
+            threadsPostsPerDay: 1,
+            styleSample: "",
+            linkedinConnected: false,
+            twitterConnected: false,
+            threadsConnected: false
+        };
+        accounts = user.accounts;
+    }
 
     return (
         <div className="max-w-7xl mx-auto pb-20 space-y-12">
@@ -48,6 +96,24 @@ export default async function SettingsPage() {
 
                     {/* Bio / Profile Optimizer */}
                     <ProfileOptimizerSection />
+
+                    {/* Client Management (Agency) */}
+                    {/* Ideally check subscription tier here, but for now we show for all or gate via UI logic */}
+                    <section id="clients" className="scroll-mt-24 space-y-6">
+                        <ClientList initialClients={
+                            (await prisma.clientProfile.findMany({
+                                where: { userId: user.id },
+                                include: { accounts: true }
+                            })).map((c: any) => ({
+                                ...c,
+                                niche: c.niche || null,
+                                bio: c.bio || null,
+                                tone: c.tone || null,
+                                avatarUrl: c.avatarUrl || null,
+                                accounts: c.accounts || []
+                            }))
+                        } />
+                    </section>
 
                     {/* Content Configuration */}
                     <section id="content" className="scroll-mt-24 space-y-6">
@@ -119,7 +185,7 @@ export default async function SettingsPage() {
                                             </div>
                                             <AnalyzeButton
                                                 platform="TWITTER"
-                                                isConnected={user.accounts.some((a: any) => a.provider === "twitter")}
+                                                isConnected={accounts.some((a: any) => a.provider === "twitter")}
                                             />
                                         </div>
 
@@ -167,7 +233,7 @@ export default async function SettingsPage() {
                                 <p className="text-sm text-on-surface-variant mb-2">Connect accounts to enable auto-publishing.</p>
 
                                 {(() => {
-                                    const getAccount = (provider: string) => user.accounts.find((a: any) => a.provider === provider);
+                                    const getAccount = (provider: string) => accounts.find((a: any) => a.provider === provider);
                                     const checkExpired = (account: any) => {
                                         if (!account) return false;
 
@@ -183,25 +249,25 @@ export default async function SettingsPage() {
                                     const twitter = getAccount("twitter");
                                     const threads = getAccount("threads");
 
-                                    console.log("Twitter Account Debug:", JSON.stringify(twitter, null, 2));
-                                    console.log("Current Time (s):", Math.floor(Date.now() / 1000));
-
                                     return (
                                         <>
                                             <SocialConnection
                                                 provider="linkedin"
                                                 isConnected={!!linkedin}
                                                 isExpired={checkExpired(linkedin)}
+                                                clientId={activeClientId}
                                             />
                                             <SocialConnection
                                                 provider="twitter"
                                                 isConnected={!!twitter}
                                                 isExpired={checkExpired(twitter)}
+                                                clientId={activeClientId}
                                             />
                                             <SocialConnection
                                                 provider="threads"
                                                 isConnected={!!threads}
                                                 isExpired={checkExpired(threads)}
+                                                clientId={activeClientId}
                                             />
                                         </>
                                     );

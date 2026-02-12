@@ -12,7 +12,10 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 
+import { useClient } from "@/components/dashboard/ClientSwitcher";
+
 export function CarouselWizard() {
+    const { activeClientId } = useClient();
     const [step, setStep] = useState<"TOPIC" | "EDIT" | "PREVIEW">("TOPIC");
     const [topic, setTopic] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
@@ -30,7 +33,7 @@ export function CarouselWizard() {
     const handleGenerate = async () => {
         setIsGenerating(true);
         try {
-            const result = await createCarouselAction(topic);
+            const result = await createCarouselAction(topic, activeClientId || undefined);
             if (result.success && result.slides) {
                 setSlides(result.slides);
                 setStep("EDIT");

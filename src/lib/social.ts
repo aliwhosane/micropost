@@ -2,27 +2,37 @@ import { prisma } from "@/lib/db";
 import { TwitterApi } from "twitter-api-v2";
 import axios from "axios";
 
-export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null }) {
-    console.log(`Attempting to publish post ${post.id} to ${post.platform}...`);
+export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null; clientProfileId?: string | null }) {
+    console.log(`Attempting to publish post ${post.id} to ${post.platform}... (Client: ${post.clientProfileId || "Personal"})`);
 
     // 1. Get User's Account Token
-    // We search for the specific provider account linked to this user.
     // We search for the specific provider account linked to this user.
     let provider = "";
     if (post.platform === "TWITTER") provider = "twitter";
     else if (post.platform === "LINKEDIN") provider = "linkedin";
     else if (post.platform === "THREADS") provider = "threads";
 
+    const whereClause: any = {
+        userId: post.userId,
+        provider: provider,
+    };
+
+    if (post.clientProfileId) {
+        whereClause.clientProfileId = post.clientProfileId;
+    } else {
+        // Explicitly check for null if personal
+        whereClause.clientProfileId = null;
+    }
+
+    console.log("Publishing Debug - Account Lookup:", whereClause);
+
     const account = await prisma.account.findFirst({
-        where: {
-            userId: post.userId,
-            provider: provider,
-        },
+        where: whereClause,
     });
 
     if (!account || !account.access_token) {
-        console.error(`No connected ${provider} account found for user ${post.userId}.`);
-        return { success: false, error: `No connected ${provider} account found. Please connect in Settings.` };
+        console.error(`No connected ${provider} account found for user ${post.userId} (Client: ${post.clientProfileId}).`);
+        return { success: false, error: `No connected ${provider} account found for this workspace.` };
     }
 
     try {

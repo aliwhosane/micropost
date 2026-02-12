@@ -9,10 +9,17 @@ export default async function PostsPage() {
     const session = await auth();
     if (!session?.user?.email) return <div>Please log in</div>;
 
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
         include: {
             posts: {
+                where: {
+                    clientProfileId: activeClientId || null
+                } as any,
                 orderBy: { createdAt: "desc" },
             },
         },

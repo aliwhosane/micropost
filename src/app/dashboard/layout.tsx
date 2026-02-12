@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { FeatureGuard } from "@/components/dashboard/FeatureGuard";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { ClientProvider } from "@/components/dashboard/ClientSwitcher";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
@@ -26,23 +27,28 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const isSubscribed = tier !== "STARTER"; // Backwards compatibility for now
 
     return (
-        <div className="min-h-screen flex bg-background">
-            <Sidebar />
+        <ClientProvider user={session?.user || {}}>
+            <div className="min-h-screen flex bg-background">
+                <Sidebar />
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
-                <header className="h-20 flex items-center justify-between px-8 bg-transparent sticky top-0 z-10">
-                    <h1 className="text-2xl font-bold text-on-surface tracking-tight">Dashboard</h1>
-                    <div className="flex items-center gap-4 bg-surface/50 backdrop-blur-md p-2 pl-4 pr-2 rounded-full border border-outline-variant/10 shadow-sm">
-                        <span className="text-sm font-medium text-on-surface-variant mr-2 hidden sm:block">Welcome back</span>
-                        <UserButton user={session?.user} />
-                    </div>
-                </header>
-                <main className="flex-1 p-6 overflow-auto">
-                    {children}
-                    <OnboardingTour />
-                </main>
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+                    <header className="h-20 flex items-center justify-between px-8 bg-transparent sticky top-0 z-10">
+                        <div className="flex items-center gap-4">
+                            {/* Mobile Sidebar Trigger could go here */}
+                            <h1 className="text-2xl font-bold text-on-surface tracking-tight">Dashboard</h1>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <UserButton user={session?.user} />
+                        </div>
+                    </header>
+                    <main className="flex-1 p-6 overflow-auto">
+                        {children}
+                        <OnboardingTour />
+                    </main>
+                </div>
             </div>
-        </div>
+        </ClientProvider>
     );
 }
