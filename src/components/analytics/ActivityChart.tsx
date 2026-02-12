@@ -12,8 +12,8 @@ export function ActivityChart({ data }: { data: { label: string; value: number }
                             {item.value}
                         </div>
                         <div
-                            className="w-full max-w-[40px] bg-primary/20 rounded-t-lg hover:bg-primary/40 transition-all cursor-pointer relative"
-                            style={{ height: `${heightPercentage}%`, minHeight: '4px' }}
+                            className="w-full max-w-[40px] bg-primary/20 rounded-t-2xl hover:bg-primary/40 transition-all cursor-pointer relative"
+                            style={{ height: `${heightPercentage}%`, minHeight: '8px' }}
                         >
                             <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0.5 h-full max-h-0 bg-white/20 group-hover:max-h-full transition-all duration-500" />
                         </div>

@@ -133,7 +133,7 @@ export function PostCardActions({
                 </Button>
                 <div className="flex items-center rounded-lg bg-emerald-600 p-[1px] hover:bg-emerald-700 hover:shadow-emerald-200/50 shadow-sm transition-all group">
                     <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-l-md hover:bg-black/10 transition-colors border-r border-emerald-500 disabled:opacity-70"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-l-md hover:bg-black/20 transition-colors border-r border-emerald-500 disabled:opacity-70"
                         onClick={onApprove}
                         disabled={actionStatus === "APPROVING" || !isValid}
                     >
@@ -150,7 +150,7 @@ export function PostCardActions({
                         )}
                     </button>
                     <button
-                        className="px-2 py-1.5 rounded-r-md text-emerald-100 hover:text-white hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-2 py-1.5 rounded-r-md text-emerald-100 hover:text-white hover:bg-black/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={onToggleSchedule}
                         title="Schedule for later"
                         disabled={!isValid}

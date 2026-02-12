@@ -8,7 +8,7 @@ import { PremiumGate } from "@/components/dashboard/PremiumGate";
 export default async function ShortsMakerPage(props: { searchParams: Promise<{ source_post_id?: string }> }) {
     const searchParams = await props.searchParams;
     const session = await auth();
-    if (!session?.user) return redirect("/login");
+    if (!session?.user?.email) return redirect("/login");
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },

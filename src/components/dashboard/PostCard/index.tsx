@@ -13,6 +13,8 @@ import { SchedulingPopover } from "./SchedulingPopover";
 import { CharacterCount } from "./CharacterCount";
 import { VisionSelector } from "../VisionCraft/VisionSelector";
 import { savePostImageAction } from "@/app/actions/image";
+import { uploadImageAction } from "@/app/actions/upload";
+import { toast } from "sonner";
 
 
 interface PostCardProps {
@@ -233,13 +235,13 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             {/* VisionCraft / Image Attachment */}
             {/* Show selector if no image and status is pending/draft/failed */}
             {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && !isEditing && (
-                <div className="pt-2 border-t border-white/5">
+                <div className="pt-2 border-t border-outline-variant/10">
                     {!showVisionSelector ? (
                         <button
                             onClick={() => setShowVisionSelector(true)}
-                            className="flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors px-2 py-1.5 rounded-md hover:bg-white/5 w-full"
+                            className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-variant/30 w-full group"
                         >
-                            <span className="text-lg">✨</span>
+                            <span className="text-lg group-hover:scale-110 transition-transform">✨</span>
                             <span>Add Visual</span>
                         </button>
                     ) : (
@@ -247,7 +249,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => setShowVisionSelector(false)}
-                                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                                    className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
                                 >
                                     Close VisionCraft
                                 </button>
@@ -266,6 +268,43 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                                 }}
                             />
                         </div>
+                    )}
+
+                    {/* Custom Upload */}
+                    {!showVisionSelector && (
+                        <label className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-variant/30 w-full cursor-pointer mt-1 group">
+                            <span className="text-lg group-hover:scale-110 transition-transform">📤</span>
+                            <span>Upload Image</span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    const formData = new FormData();
+                                    formData.append("file", file);
+
+                                    toast.promise(
+                                        uploadImageAction(formData).then(async (res) => {
+                                            if (res.success && res.url) {
+                                                setImageUrl(res.url);
+                                                await savePostImageAction(id, res.url);
+                                                router.refresh();
+                                                return "Image uploaded!";
+                                            }
+                                            throw new Error(res.error);
+                                        }),
+                                        {
+                                            loading: 'Uploading...',
+                                            success: 'Image uploaded!',
+                                            error: 'Upload failed'
+                                        }
+                                    );
+                                }}
+                            />
+                        </label>
                     )}
                 </div>
             )}

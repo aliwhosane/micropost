@@ -9,7 +9,7 @@ import { PremiumGate } from "@/components/dashboard/PremiumGate";
 
 export default async function AnalyticsPage() {
     const session = await auth();
-    if (!session?.user?.id) return redirect("/login");
+    if (!session?.user?.id || !session.user.email) return redirect("/login");
 
     const userId = session.user.id;
 

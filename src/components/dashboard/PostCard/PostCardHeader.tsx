@@ -27,7 +27,7 @@ export function PostCardHeader({
     return (
         <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-                <div className={`p-1.5 rounded-full bg-white/5 border border-black/5 dark:border-white/10 ${platformColor} bg-opacity-10`}>
+                <div className={`p-1.5 rounded-full bg-surface-variant/30 border border-outline-variant/10 ${platformColor} bg-opacity-10`}>
                     <PlatformIcon className={`h-4 w-4 ${platformColor}`} />
                 </div>
                 <div className="flex flex-col">
@@ -64,7 +64,7 @@ export function PostCardHeader({
                 {/* Toggle Button */}
                 <button
                     onClick={onToggleCompact}
-                    className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-on-surface-variant transition-colors"
+                    className="p-1 rounded-md hover:bg-surface-variant/50 text-on-surface-variant transition-colors"
                 >
                     {isCompact ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                 </button>

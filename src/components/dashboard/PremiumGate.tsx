@@ -24,11 +24,11 @@ export function PremiumGate({
     return (
         <div className="relative w-full h-full min-h-[400px] flex items-center justify-center p-6">
             {/* Background Blur Effect */}
-            <div className="absolute inset-0 overflow-hidden rounded-xl">
-                <div className="w-full h-full opacity-30 blur-sm pointer-events-none select-none filter">
+            <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                <div className="w-full h-full opacity-40 blur-md pointer-events-none select-none filter scale-105">
                     {children}
                 </div>
-                <div className="absolute inset-0 bg-surface/50 backdrop-blur-md z-10" />
+                <div className="absolute inset-0 bg-surface/60 backdrop-blur-xl z-10" />
             </div>
 
             <motion.div
@@ -37,7 +37,7 @@ export function PremiumGate({
                 transition={{ duration: 0.3 }}
                 className="relative z-20 max-w-md w-full"
             >
-                <Card className="border-primary/20 shadow-2xl bg-surface-container">
+                <Card className="border-outline-variant/10 shadow-2xl bg-surface/90 backdrop-blur-sm">
                     <CardHeader className="text-center pb-2">
                         <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
                             <Lock className="w-6 h-6" />

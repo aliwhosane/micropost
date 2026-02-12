@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -93,6 +94,7 @@ export default function RootLayout({
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
         {children}
+        <Toaster />
       </body>
     </html>
   );
