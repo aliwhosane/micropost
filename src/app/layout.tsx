@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,8 +22,8 @@ export const metadata: Metadata = {
     default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
   },
-  description: siteConfig.description,
-  keywords: ["AI social media generator", "social media automation", "ghostwriter AI", "twitter generator", "linkedin post generator"],
+  description: "Free AI Social Media Ghostwriter. Generate viral LinkedIn posts, Twitter threads, and images in seconds. No credit card required.",
+  keywords: ["AI social media generator", "free linkedin post generator", "viral tweet generator", "AI ghostwriter free", "social media scheduling", "personal branding AI", "thread maker"],
   authors: [
     {
       name: siteConfig.creator,
@@ -37,21 +38,14 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: siteConfig.ogImage,
-        width: 1200,
-        height: 630,
-        alt: siteConfig.name,
-      },
-    ],
+
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
-    description: siteConfig.description,
-    images: [siteConfig.ogImage],
+    description: "The AI ghostwriter for LinkedIn & Twitter. Viral frameworks, image gen, and scheduling.",
     creator: "@micropostai",
+    images: ["/twitter-image"], // Uses the dynamic route twitter-image.tsx
   },
   icons: {
     icon: "/favicon.svg",
@@ -101,6 +95,7 @@ export default function RootLayout({
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
         {children}
+        <Toaster />
       </body>
     </html>
   );

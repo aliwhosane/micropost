@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -19,6 +20,7 @@ model User {
 
   posts       Post[]
   topics      Topic[]
+  clients     ClientProfile[]
   preferences Preferences?
 
   createdAt DateTime @default(now())
@@ -45,6 +47,15 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+
+  // Social Account Metadata (for display)
+  accountName   String?
+  accountHandle String?
+  accountImage  String?
+
+  // Client Profile Association
+  clientProfileId String?
+  clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -78,8 +89,42 @@ model Topic {
   notes   String?
   stance  String? // "PRO", "ANTI", "NEUTRAL", "BOTH"
 
+  clientProfileId String?
+  clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([clientProfileId])
+}
+
+model ClientProfile {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name           String
+  niche          String?
+  bio            String? // Context for AI generation
+  tone           String? // "Professional", "Witty", etc.
+  targetAudience String?
+  avatarUrl      String?
+
+  posts    Post[]
+  accounts Account[]
+  topics   Topic[]
+
+  // Preferences / Generation Settings
+  twitterPostsPerDay  Int @default(1)
+  linkedinPostsPerDay Int @default(1)
+  threadsPostsPerDay  Int @default(1)
+  styleSample         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Post {
@@ -90,15 +135,22 @@ model Post {
   platform String? // TWITTER, LINKEDIN, BOTH
   imageUrl String? // URL or Base64 of attached visual
 
-
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clientProfileId String?
+  clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
 
   scheduledFor DateTime?
   publishedAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([clientProfileId])
 }
 
 model Preferences {

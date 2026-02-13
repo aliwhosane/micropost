@@ -7,10 +7,14 @@ import React from "react";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Load fonts (we'll need a font buffer for Satori)
+import fs from "fs/promises";
+import path from "path";
+
+// Load fonts (we'll need a font buffer for Satori)
 async function loadFont() {
-    // Fetch Inter font
-    const response = await fetch("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff");
-    return await response.arrayBuffer();
+    // Load from local filesystem
+    const fontPath = path.join(process.cwd(), "public", "fonts", "Inter-Regular.woff");
+    return await fs.readFile(fontPath);
 }
 
 /**
@@ -127,7 +131,7 @@ export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE" | 
 
             {isNote && (
                 <div style={{ marginTop: "auto", fontSize: "16px", color: "#52525b" }}>
-                    micropost.ai
+                    micropost-ai.com
                 </div>
             )}
         </div>
@@ -159,13 +163,16 @@ export async function generateSocialCard(text: string, type: "SNAP" | "QUOTE" | 
 /**
  * Option C: Visual Hook (AI Image)
  */
-export async function generateAiImage(concept: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" = "TWITTER"): Promise<string> {
+export async function generateAiImage(concept: string, platform: "TWITTER" | "LINKEDIN" | "THREADS" | "TIKTOK" = "TWITTER"): Promise<string> {
     // 1. Enhance Prompt using lighter text model (still using old SDK for now as it's initialized globally, or switch?)
     // Let's stick to the existing `genAI` for text to minimize churn, or just use the new one for everything.
     // Minimizing churn: use defaults.
     const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
 
-    const aspectRatio = platform === "TWITTER" ? "16:9" : "1:1";
+    // Handle aspect ratios
+    let aspectRatio = "16:9";
+    if (platform === "THREADS") aspectRatio = "1:1";
+    if (platform === "TIKTOK") aspectRatio = "9:16";
 
     const enhancementPrompt = `
     Act as a professional AI Art Director.
@@ -173,7 +180,7 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
     Concept: "${concept}"
     
     Requirements:
-    - Aspect Ratio: ${aspectRatio}
+    - COMPOSITION MUST BE VERTICAL (Aspect Ratio: 9:16).
     - Cinematic lighting
     - High resolution, 2k
     - Describe composition, camera angle, and textures.
@@ -201,8 +208,16 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
                 parts: [
                     { text: finalPrompt }
                 ]
+            },
+            config: {
+                // @ts-ignore - Nano Banana API specific config
+                image_config: {
+                    aspect_ratio: aspectRatio
+                }
             }
         });
+
+
 
         console.log("Image Gen Full Response (New SDK):", JSON.stringify(response, null, 2));
 
@@ -232,8 +247,10 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
  * Option D: Vertical Video Slide (Satori)
  * 1080x1920 layout for TikTok/Reels
  */
-export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA'): Promise<Buffer> {
+export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' | 'CTA', bgImage?: string): Promise<Buffer> {
+    console.log("generateVerticalStats called with text length:", text?.length, "type:", type, "hasBgImage:", !!bgImage);
     const fontData = await loadFont();
+    console.log("Font data loaded:", fontData ? fontData.length : "null");
 
     // Design Tokens
     const width = 1080;
@@ -261,7 +278,9 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
     // Split text for formatting if needed, or just render block
     // Satori handles wrapping automatically for normal text.
     // Safety: Strip emojis to ensure font stability
-    const renderText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+    const stringText = text || " ";
+    const renderText = stringText.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+    console.log("Render text prepared:", renderText.substring(0, 50));
 
     const element = (
         <div
@@ -273,16 +292,20 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                 justifyContent: "center",
                 alignItems: "center",
                 padding: "80px",
-                background: bgStyle,
+                background: bgImage ? `url(${bgImage})` : bgStyle,
                 fontFamily: "Inter",
-                backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)', // Subtle noise/texture
+                ...(bgImage ? {
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                } : {}),
             }
             }
         >
             {/* Safe Area Top */}
-            < div style={{ position: 'absolute', top: 0, height: '200px', width: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, height: '200px', width: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)' }} />
 
-            < div
+            <div
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -304,19 +327,20 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
                     lineHeight: "1.1",
                     textShadow: "0 10px 30px rgba(0,0,0,0.5)"
                 }}>
-                    {text}
+                    {renderText}
                 </div>
-            </div >
+            </div>
 
             {/* Safe Area Bottom */}
-            < div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', bottom: 0, height: '300px', width: '100%', background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '32px' }}>
-                    @micropost.ai
+                    www.micropost-ai.com
                 </div>
             </div >
-        </div >
+        </div>
     );
 
+    console.log("Calling satori...");
     const svg = await satori(
         element,
         {
@@ -332,10 +356,13 @@ export async function generateVerticalStats(text: string, type: 'HOOK' | 'BODY' 
             ],
         }
     );
+    console.log("Satori generated SVG length:", svg.length);
 
+    console.log("Calling resvg...");
     const resvg = new Resvg(svg, {
         fitTo: { mode: 'width', value: width },
     });
     const pngData = resvg.render();
+    console.log("Resvg render complete");
     return pngData.asPng();
 }

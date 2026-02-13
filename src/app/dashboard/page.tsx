@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { getPendingPosts, getActiveTopics, getDashboardStats } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2, Clock, FileText, Hash, Sparkles } from "lucide-react";
@@ -20,20 +21,29 @@ export default async function DashboardPage() {
 
     if (!user) return <div>User not found</div>;
 
-    const [pendingPosts, activeTopicsList, totalPostsCount, publishedPostsCount, activeTopicsCount] = await Promise.all([
-        prisma.post.findMany({
-            where: { userId: user.id, status: "PENDING" },
-            orderBy: { createdAt: "desc" },
-            take: 50
-        }),
-        prisma.topic.findMany({
-            where: { userId: user.id, enabled: true },
-            take: 5
-        }),
-        prisma.post.count({ where: { userId: user.id } }),
-        prisma.post.count({ where: { userId: user.id, status: "PUBLISHED" } }),
-        prisma.topic.count({ where: { userId: user.id, enabled: true } })
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+
+    // Filter condition
+    const whereCondition = {
+        userId: user.id,
+        // If activeClientId is set, filter by it. existing nulls are personal posts.
+        // If not set, strictly filter for null (personal) to achieve isolation.
+        clientProfileId: activeClientId || null
+    };
+
+    console.log("Dashboard Debug:", { activeClientId });
+
+    const activeClientIdStr = activeClientId || null;
+
+    const [pendingPosts, activeTopicsList, stats] = await Promise.all([
+        getPendingPosts(user.id, activeClientIdStr),
+        getActiveTopics(user.id, activeClientIdStr),
+        getDashboardStats(user.id, activeClientIdStr)
     ]);
+
+    const { totalPostsCount, publishedPostsCount, activeTopicsCount } = stats;
 
     return (
         <div className="space-y-8">

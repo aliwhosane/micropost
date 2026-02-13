@@ -87,7 +87,7 @@ export async function savePostImageAction(postId: string, imageUrl: string) {
     const creditText = "\n\n📸 credit: micropost-ai";
 
     // Append credit for LinkedIn and Threads if not already present
-    if ((post.platform === "LINKEDIN" || post.platform === "THREADS") && !post.content.includes("credit: micropost-ai")) {
+    if ((post.platform === "LINKEDIN" || post.platform === "THREADS") && post.content && !post.content.includes("credit: micropost-ai")) {
         newContent = `${post.content.trim()}${creditText}`;
     }
 

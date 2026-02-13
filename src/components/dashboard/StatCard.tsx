@@ -10,17 +10,21 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
     return (
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-on-surface-variant">
-                    {title}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-on-surface-variant" />
+                <div className="flex flex-col space-y-1">
+                    <CardTitle className="text-sm font-medium text-on-surface-variant/80 uppercase tracking-wide">
+                        {title}
+                    </CardTitle>
+                    <div className="text-3xl font-bold text-on-surface">{value}</div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-6 w-6 text-primary" />
+                </div>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-on-surface">{value}</div>
-                <p className="text-xs text-on-surface-variant mt-1">
-                    <span className="text-primary font-medium">{trend}</span>
+                <p className="text-xs text-on-surface-variant mt-1 font-medium bg-surface-variant/50 inline-block px-2 py-1 rounded-full">
+                    {trend}
                 </p>
             </CardContent>
         </Card>

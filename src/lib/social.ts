@@ -2,27 +2,37 @@ import { prisma } from "@/lib/db";
 import { TwitterApi } from "twitter-api-v2";
 import axios from "axios";
 
-export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null }) {
-    console.log(`Attempting to publish post ${post.id} to ${post.platform}...`);
+export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null; clientProfileId?: string | null }) {
+    console.log(`Attempting to publish post ${post.id} to ${post.platform}... (Client: ${post.clientProfileId || "Personal"})`);
 
     // 1. Get User's Account Token
-    // We search for the specific provider account linked to this user.
     // We search for the specific provider account linked to this user.
     let provider = "";
     if (post.platform === "TWITTER") provider = "twitter";
     else if (post.platform === "LINKEDIN") provider = "linkedin";
     else if (post.platform === "THREADS") provider = "threads";
 
+    const whereClause: any = {
+        userId: post.userId,
+        provider: provider,
+    };
+
+    if (post.clientProfileId) {
+        whereClause.clientProfileId = post.clientProfileId;
+    } else {
+        // Explicitly check for null if personal
+        whereClause.clientProfileId = null;
+    }
+
+    console.log("Publishing Debug - Account Lookup:", whereClause);
+
     const account = await prisma.account.findFirst({
-        where: {
-            userId: post.userId,
-            provider: provider,
-        },
+        where: whereClause,
     });
 
     if (!account || !account.access_token) {
-        console.error(`No connected ${provider} account found for user ${post.userId}.`);
-        return { success: false, error: `No connected ${provider} account found. Please connect in Settings.` };
+        console.error(`No connected ${provider} account found for user ${post.userId} (Client: ${post.clientProfileId}).`);
+        return { success: false, error: `No connected ${provider} account found for this workspace.` };
     }
 
     try {
@@ -32,14 +42,14 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at; // Integer timestamp in seconds
             const now = Math.floor(Date.now() / 1000);
 
-            // If expired or about to expire (within 5 mins), refresh
-            if (expiresAt && (expiresAt - now < 300) && account.refresh_token) {
+            // 1. Refresh if expired or about to expire (within 24 hours)
+            if (expiresAt && (expiresAt - now < 86400) && account.refresh_token) {
                 console.log("Twitter token expired or close to expiration. Refreshing...");
                 try {
                     // TwitterApi requires client ID and secret for refresh
                     const client = new TwitterApi({
-                        clientId: process.env.AUTH_TWITTER_ID!,
-                        clientSecret: process.env.AUTH_TWITTER_SECRET!,
+                        clientId: process.env.AUTH_TWITTER_ID?.trim()!,
+                        clientSecret: process.env.AUTH_TWITTER_SECRET?.trim()!,
                     });
 
                     const { client: refreshedClient, accessToken: newAccessToken, refreshToken: newRefreshToken, expiresIn } = await client.refreshOAuth2Token(account.refresh_token);
@@ -61,11 +71,20 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
                     accessToken = newAccessToken;
                     console.log("Successfully refreshed Twitter token.");
-                } catch (refreshError) {
+                } catch (refreshError: any) {
                     console.error("Failed to refresh Twitter token:", refreshError);
-                    // If refresh fails, we might still try with old token or throw
-                    throw new Error("Failed to refresh Twitter token");
+                    if (refreshError.code) console.error("Refresh Error Code:", refreshError.code);
+                    if (refreshError.data) console.error("Refresh Error Data:", JSON.stringify(refreshError.data, null, 2));
+
+                    // Check below will catch if it is still expired
                 }
+            }
+
+            // 2. Check if ALREADY expired and NOT refreshed
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("Twitter token has expired and could not be refreshed. User needs to re-authenticate.");
+                throw new Error("Twitter session expired. Please sign out and sign in again.");
             }
 
             if (!accessToken) throw new Error("No access token available for Twitter");
@@ -104,7 +123,120 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             // Often stored in 'providerAccountId' but sometimes just 'id'.
             // Let's assume providerAccountId is the URN (e.g. "urn:li:person:...")
 
+            let accessToken = account.access_token;
+            const expiresAt = account.expires_at;
+            const now = Math.floor(Date.now() / 1000);
+
+            // 1. Refresh if within 7 days of expiry (or already expired)
+            // 7 days = 7 * 24 * 60 * 60 = 604800 seconds
+            if (expiresAt && (expiresAt - now < 604800) && account.refresh_token) {
+                console.log("LinkedIn token is within 7 days of expiration. Refreshing...");
+                try {
+                    const params = new URLSearchParams();
+                    params.append('grant_type', 'refresh_token');
+                    params.append('refresh_token', account.refresh_token);
+                    params.append('client_id', process.env.AUTH_LINKEDIN_ID!);
+                    params.append('client_secret', process.env.AUTH_LINKEDIN_SECRET!);
+
+                    const refreshResponse = await axios.post("https://www.linkedin.com/oauth/v2/accessToken", params, {
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    });
+
+                    const { access_token: newAccessToken, expires_in, refresh_token: newRefreshToken, refresh_token_expires_in } = refreshResponse.data;
+
+                    if (newAccessToken) {
+                        await prisma.account.update({
+                            where: {
+                                provider_providerAccountId: {
+                                    provider: "linkedin",
+                                    providerAccountId: account.providerAccountId,
+                                },
+                            },
+                            data: {
+                                access_token: newAccessToken,
+                                expires_at: Math.floor(Date.now() / 1000) + expires_in,
+                                refresh_token: newRefreshToken || account.refresh_token, // Update refresh token if provided
+                            },
+                        });
+                        accessToken = newAccessToken;
+                        console.log("Successfully refreshed LinkedIn token.");
+                    }
+                } catch (refreshError) {
+                    console.error("Failed to refresh LinkedIn token:", refreshError);
+                    // Continue with old token
+                }
+            }
+
+            // 2. Strict Check: If still expired after refresh attempt, fail.
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("LinkedIn token has expired. User needs to re-authenticate.");
+                throw new Error("LinkedIn session expired. Please sign out and sign in again.");
+            }
+
+            if (!accessToken) throw new Error("No access token available for LinkedIn");
+
             const urn = account.providerAccountId; // Ensure this is stored correctly by NextAuth
+
+            // Prepare content payload
+            let shareContent: any = {
+                shareCommentary: {
+                    text: post.content,
+                },
+                shareMediaCategory: "NONE",
+            };
+
+            // Image Upload Handling
+            if (post.imageUrl && post.imageUrl.startsWith("data:")) {
+                try {
+                    // Step 1: Register Upload
+                    const registerResponse = await axios.post(
+                        "https://api.linkedin.com/v2/assets?action=registerUpload",
+                        {
+                            registerUploadRequest: {
+                                recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+                                owner: `urn:li:person:${urn}`,
+                                serviceRelationships: [{
+                                    relationshipType: "OWNER",
+                                    identifier: "urn:li:userGeneratedContent"
+                                }]
+                            }
+                        },
+                        { headers: { Authorization: `Bearer ${accessToken}` } }
+                    );
+
+                    const uploadUrl = registerResponse.data.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+                    const assetUrn = registerResponse.data.value.asset;
+
+                    console.log("LinkedIn Upload URL obtained:", uploadUrl);
+
+                    // Step 2: Upload Image Binary
+                    const base64Data = post.imageUrl.split(",")[1];
+                    const buffer = Buffer.from(base64Data, "base64");
+
+                    await axios.put(uploadUrl, buffer, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            "Content-Type": "image/png"
+                        }
+                    });
+
+                    console.log("LinkedIn Image uploaded successfully");
+
+                    // Step 3: Configure Share Content
+                    shareContent.shareMediaCategory = "IMAGE";
+                    shareContent.media = [{
+                        status: "READY",
+                        description: { text: "Image" },
+                        media: assetUrn,
+                        title: { text: "Image" }
+                    }];
+
+                } catch (imageError) {
+                    console.error("Failed to upload image to LinkedIn:", imageError);
+                    throw new Error("Failed to upload image to LinkedIn");
+                }
+            }
 
             await axios.post(
                 "https://api.linkedin.com/v2/ugcPosts",
@@ -114,12 +246,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     // LinkedIn URN format: urn:li:person:123456
                     lifecycleState: "PUBLISHED",
                     specificContent: {
-                        "com.linkedin.ugc.ShareContent": {
-                            shareCommentary: {
-                                text: post.content,
-                            },
-                            shareMediaCategory: "NONE",
-                        },
+                        "com.linkedin.ugc.ShareContent": shareContent
                     },
                     visibility: {
                         "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
@@ -127,7 +254,7 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${account.access_token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         "X-Restli-Protocol-Version": "2.0.0",
                     },
                 }
@@ -142,9 +269,10 @@ export async function publishToSocials(post: { id: string; userId: string; conte
             const expiresAt = account.expires_at;
             const now = Math.floor(Date.now() / 1000);
 
-            // Refresh if expired or within 24 hours of expiry (Threads tokens are long-lived, safe to refresh early)
-            if (expiresAt && (expiresAt - now < 86400)) {
-                console.log("Threads token expired or close to expiration. Refreshing...");
+            // 1. Refresh if within 30 days of expiry (or already expired)
+            // 30 days = 30 * 24 * 60 * 60 = 2,592,000 seconds
+            if (expiresAt && (expiresAt - now < 2592000)) {
+                console.log("Threads token is compatible for refresh. Refreshing...");
                 try {
                     const refreshResponse = await axios.get("https://graph.threads.net/refresh_access_token", {
                         params: {
@@ -175,12 +303,19 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                     }
                 } catch (refreshError) {
                     console.error("Failed to refresh Threads token:", refreshError);
-                    // Continue with old token if refresh fails? Likely will fail too, but we let it fall through.
+                    // Continue with old token as it might still be valid for a short time
                 }
             }
 
+            // 2. Strict Check: If still expired after refresh attempt, fail.
+            const isRefreshed = accessToken !== account.access_token;
+            if (!isRefreshed && expiresAt && now >= expiresAt) {
+                console.error("Threads token has expired. User needs to re-authenticate.");
+                throw new Error("Threads session expired. Please sign out and sign in again.");
+            }
+
             // Step 1: Create a media container
-            const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost.vercel.app"}/api/images/${post.id}`;
+            const publicImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost-ai.com"}/api/images/${post.id}`;
 
             const containerParams: any = {
                 text: post.content,

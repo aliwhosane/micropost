@@ -9,7 +9,10 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Sparkles, Wand2 } from "lucide-react";
 import { triggerManualGeneration } from "@/lib/actions";
 
+import { useClient } from "@/components/dashboard/ClientSwitcher";
+
 export function GenerationWizard() {
+    const { activeClientId } = useClient();
     const [isOpen, setIsOpen] = useState(false);
     const [thoughts, setThoughts] = useState("");
     const [framework, setFramework] = useState("");
@@ -33,6 +36,7 @@ export function GenerationWizard() {
         const formData = new FormData();
         formData.append("thoughts", thoughts);
         formData.append("framework", framework);
+        if (activeClientId) formData.append("clientId", activeClientId);
         formData.append("platforms", JSON.stringify(selectedPlatforms));
 
         try {
@@ -102,7 +106,7 @@ export function GenerationWizard() {
                             Choose a Framework
                         </label>
                         <Select value={framework} onValueChange={setFramework}>
-                            <SelectTrigger className="w-full bg-surface">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select a framework (Optional)" />
                             </SelectTrigger>
                             <SelectContent>
@@ -125,7 +129,7 @@ export function GenerationWizard() {
                         </label>
                         <Textarea
                             placeholder="E.g. 'I just read an article about Vercel v0, let's talk about AI coding tools today.'"
-                            className="bg-surface resize-none h-24"
+                            className="resize-none h-24"
                             value={thoughts}
                             onChange={(e) => setThoughts(e.target.value)}
                         />

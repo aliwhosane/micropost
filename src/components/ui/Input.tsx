@@ -20,8 +20,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     type={type}
                     id={inputId}
                     className={cn(
-                        "peer flex h-14 w-full rounded-t-md border-b-2 border-outline-variant bg-surface-variant/30 px-4 pt-5 pb-2 text-on-surface ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus-visible:border-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
-                        error && "border-error focus-visible:border-error",
+                        "peer flex h-14 w-full rounded-2xl border border-transparent bg-surface-variant/30 px-4 pt-5 pb-2 text-on-surface ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-transparent focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm",
+                        error && "border-error focus-visible:border-error bg-error/5",
                         className
                     )}
                     placeholder={label || "Input"}

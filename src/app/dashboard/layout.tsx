@@ -1,10 +1,13 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UserButton } from "@/components/dashboard/UserButton";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
 import { FeatureGuard } from "@/components/dashboard/FeatureGuard";
+import { getSubscriptionTier } from "@/lib/subscription";
+import { ClientProvider } from "@/components/dashboard/ClientSwitcher";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
@@ -14,29 +17,38 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     const user = session?.user?.email ? await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { subscriptionStatus: true }
+        select: {
+            subscriptionStatus: true,
+            subscriptionPlanId: true
+        }
     }) : null;
 
-    const isSubscribed = user?.subscriptionStatus === "active";
+    const tier = getSubscriptionTier(user || {});
+    const isSubscribed = tier !== "STARTER"; // Backwards compatibility for now
 
     return (
-        <div className="min-h-screen flex bg-background">
-            <Sidebar />
+        <ClientProvider user={session?.user || {}}>
+            <div className="min-h-screen flex bg-background">
+                <Sidebar />
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                <header className="h-16 border-b border-outline-variant/20 flex items-center justify-between px-6 bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-                    <h1 className="text-xl font-semibold text-on-surface">Dashboard</h1>
-                    <div className="flex items-center gap-4">
-                        <UserButton user={session?.user} />
-                    </div>
-                </header>
-                <main className="flex-1 p-6 overflow-auto">
-                    <FeatureGuard isSubscribed={isSubscribed}>
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+                    <header className="h-20 flex items-center justify-between px-8 bg-transparent sticky top-0 z-10">
+                        <div className="flex items-center gap-4">
+                            {/* Mobile Sidebar Trigger could go here */}
+                            <h1 className="text-2xl font-bold text-on-surface tracking-tight">Dashboard</h1>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <UserButton user={session?.user} />
+                        </div>
+                    </header>
+                    <main className="flex-1 p-6 overflow-auto">
                         {children}
-                    </FeatureGuard>
-                </main>
+                        <OnboardingTour />
+                    </main>
+                </div>
             </div>
-        </div>
+        </ClientProvider>
     );
 }

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         // For now, we return a confirmation code as required by Meta compliance.
 
         return NextResponse.json({
-            url: `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost.ai"}/deletion-status?id=123`,
+            url: `${process.env.NEXT_PUBLIC_APP_URL || "https://micropost-ai.com"}/deletion-status?id=123`,
             confirmation_code: "12345"
         });
     } catch (error) {

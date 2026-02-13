@@ -135,6 +135,21 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     }
 }
 
+export async function generatePostContent(
+    topic: string,
+    platform: "TWITTER" | "LINKEDIN" | "THREADS",
+    contextInstructions?: string,
+    styleTone?: string
+): Promise<string> {
+    const result = await generateSocialPost({
+        topics: [topic],
+        platform,
+        temporaryThoughts: contextInstructions, // Use context as "temporary thoughts" to steer the AI
+        styleSample: styleTone, // Use tone as style sample
+    });
+    return result.content;
+}
+
 export async function analyzeTrends(newsItems: any[]): Promise<any[]> {
 
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
@@ -304,5 +319,49 @@ export async function generateVideoScript(topicOrText: string): Promise<VideoScr
     } catch (error) {
         console.error("AI Script Generation Error:", error);
         throw new Error("Failed to generate script.");
+    }
+}
+
+export interface CarouselSlide {
+    title: string;
+    content: string;
+    imageKeyword?: string; // For auto-selecting background images later
+}
+
+export async function generateCarouselContent(topic: string): Promise<CarouselSlide[]> {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `
+    You are an expert LinkedIn Carousel creator.
+    Create a high-performing, viral carousel script based on the following topic or url.
+
+    Topic: "${topic}"
+
+    Constraints:
+    - Slide 1: TITLE SLIDE. Short, punchy hook (under 10 words).
+    - Slide 2-N: CONTENT SLIDES. 3-5 actionable points. Be concise. One big idea per slide.
+    - Last Slide: OUTRO. A call to action or summary.
+    - Total Slides: 5 to 7.
+    - Tone: Professional but engaging, like a thought leader.
+
+    Output Format (JSON Array ONLY):
+    [
+        { "title": "Big Hook Title", "content": "Sub-hook or extremely short context.", "imageKeyword": "shock" },
+        { "title": "Point 1", "content": "Explanation...", "imageKeyword": "business meeting" }
+    ]
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        // Clean markdown code blocks if present
+        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("AI Carousel Generation Error:", error);
+        // Fallback script if AI fails
+        return [
+            { title: "Error Generating", content: "Please try again.", imageKeyword: "error" }
+        ];
     }
 }

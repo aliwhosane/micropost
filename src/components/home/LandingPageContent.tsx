@@ -36,7 +36,15 @@ import {
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { useRef } from "react";
 
-export function LandingPageContent() {
+interface LandingPageContentProps {
+    productIds: {
+        pro: string;
+        agencyMonthly: string;
+        agencyYearly: string;
+    }
+}
+
+export function LandingPageContent({ productIds }: LandingPageContentProps) {
     const targetRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: targetRef,
@@ -75,9 +83,9 @@ export function LandingPageContent() {
                     initial="hidden"
                     animate="show"
                 >
-                    <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-variant/50 border border-outline-variant/30 text-on-surface-variant text-sm font-medium">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <span>v2.5 is live: Viral Frameworks, Image Gen & More.</span>
+                    <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-variant/50 border border-primary/20 text-primary text-sm font-medium shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                        <Sparkles className="h-4 w-4 fill-primary" />
+                        <span>New: The All-In-One Viral Engine is Here</span>
                     </motion.div>
 
                     <motion.h1
@@ -86,7 +94,7 @@ export function LandingPageContent() {
                     >
                         Stop Writing. <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-tertiary to-primary bg-[length:200%_auto] animate-gradient">
-                            Viral Content Engine.
+                            Start Growing.
                         </span>
                     </motion.h1>
 
@@ -94,16 +102,20 @@ export function LandingPageContent() {
                         className="text-xl md:text-2xl text-on-surface-variant max-w-3xl mx-auto leading-relaxed"
                         variants={item}
                     >
-                        The AI ghostwriter that learns your voice, fills your content calendar in minutes, and posts for you. <span className="text-on-surface font-semibold">Finally, consistency without the burnout.</span>
+                        The AI ghostwriter that actually <b>learns your voice</b>. Creates viral threads, LinkedIn posts, and visuals in seconds.
+                        <br />
+                        <span className="text-on-surface font-semibold">Consistently viral, automatically.</span>
                     </motion.p>
 
-                    <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+                    <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4 pt-8 items-center">
                         <Link href="/login">
                             <Button size="lg" className="rounded-full h-16 px-12 text-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
-                                Generate My First Post <ArrowRight className="ml-2 h-6 w-6" />
+                                Start for Free <ArrowRight className="ml-2 h-6 w-6" />
                             </Button>
                         </Link>
-
+                        <p className="text-sm text-on-surface-variant/60 mt-4 sm:mt-0 sm:absolute sm:-bottom-8">
+                            * No credit card required. Free basic tier available.
+                        </p>
                     </motion.div>
 
                     {/* Social Proof Mini-Bar */}
@@ -111,8 +123,8 @@ export function LandingPageContent() {
                         {/* Placeholders for logos (Text for now) */}
                         <span className="text-xl font-bold font-mono">X (Twitter)</span>
                         <span className="text-xl font-bold font-mono">LinkedIn</span>
-                        <span className="text-xl font-bold font-mono">ProductHunt</span>
-                        <span className="text-xl font-bold font-mono">IndieHackers</span>
+                        <span className="text-xl font-bold font-mono">Threads</span>
+                        <span className="text-xl font-bold font-mono">Instagram</span>
                     </motion.div>
                 </motion.div>
             </section>
@@ -218,7 +230,7 @@ export function LandingPageContent() {
                         </div>
                         <motion.div style={{ opacity, scale }} className="relative">
                             <div className="absolute inset-0 bg-gradient-to-bl from-secondary/20 to-transparent blur-3xl -z-10 rounded-full" />
-                            <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
+                            <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
                                 <div className="flex items-center gap-4 mb-4 border-b border-outline-variant/20 pb-4">
                                     <Mail className="text-secondary h-6 w-6" />
                                     <div>
@@ -241,7 +253,7 @@ export function LandingPageContent() {
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         <motion.div style={{ opacity, scale }} className="order-2 md:order-1 relative">
                             <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-transparent blur-3xl -z-10 rounded-full" />
-                            <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 group">
+                            <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 group">
                                 <div className="space-y-4">
                                     <div className="flex gap-2 items-center text-sm font-mono text-on-surface-variant/80 bg-surface-variant/50 p-3 rounded-lg">
                                         <Wand2 className="h-4 w-4 text-purple-500" />
@@ -435,7 +447,7 @@ export function LandingPageContent() {
                         <Link href="/tools/cold-dm-writer">
                             <motion.div
                                 whileHover={{ y: -5 }}
-                                className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/40 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group h-full relative overflow-hidden"
+                                className="bg-surface p-6 rounded-2xl shadow-sm border border-outline-variant/10 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer group h-full relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <Send className="h-24 w-24 -mr-8 -mt-8 text-indigo-500" />
@@ -552,46 +564,83 @@ export function LandingPageContent() {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="max-w-5xl mx-auto"
+                    className="max-w-7xl mx-auto"
                 >
                     <div className="text-center mb-16 space-y-4">
                         <h2 className="text-4xl font-bold tracking-tight text-on-surface">Fair & Simple Pricing</h2>
                         <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-                            We believe in accessibility. Choose the plan that makes sense for you.
+                            Start for free, upgrade when you go viral.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        {/* Monthly - Pay What You Want */}
+                    <div className="grid md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                        {/* Free Tier */}
+                        <Card className="border-outline-variant/40 bg-surface h-full flex flex-col hover:border-outline-variant/60 transition-colors">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-medium text-on-surface-variant">Free</CardTitle>
+                                <div className="mt-4">
+                                    <span className="text-4xl font-bold text-on-surface">$0</span>
+                                    <span className="text-on-surface-variant ml-2">/ forever</span>
+                                </div>
+                                <CardDescription className="pt-2">
+                                    For hobbyists.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <ul className="space-y-3 pt-4">
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>5 Posts per month</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>Access to Free Tools</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>Basic Formatting</span>
+                                    </li>
+                                </ul>
+                            </CardContent>
+                            <div className="p-6 pt-0 mt-auto">
+                                <Link href="/login">
+                                    <Button variant="outlined" className="w-full h-12 text-base">
+                                        Start Free
+                                    </Button>
+                                </Link>
+                            </div>
+                        </Card>
+
+                        {/* Pro Plan */}
                         <Card className="border-outline-variant/40 bg-surface h-full flex flex-col hover:border-primary/50 transition-colors">
                             <CardHeader>
-                                <CardTitle className="text-xl font-medium text-on-surface-variant">Community Plan</CardTitle>
+                                <CardTitle className="text-xl font-medium text-on-surface-variant">Pro</CardTitle>
                                 <div className="mt-4">
-                                    <span className="text-4xl font-bold text-on-surface">Pay what you want</span>
+                                    <span className="text-4xl font-bold text-on-surface">$29</span>
                                     <span className="text-on-surface-variant ml-2">/ month</span>
                                 </div>
                                 <CardDescription className="pt-2">
-                                    Value-based pricing for everyone.
+                                    For solo creators.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Full access to all AI features</span>
+                                        <span>3 Posts per day</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Unlimited topic generation</span>
+                                        <span>Basic Analytics</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface-variant">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Cancel anytime</span>
+                                        <span>Unlimited Topic Gen</span>
                                     </li>
                                 </ul>
                             </CardContent>
                             <div className="p-6 pt-0 mt-auto">
-                                <Link href="/login">
+                                <Link href={`/checkout/${productIds.pro}`}>
                                     <Button variant="outlined" className="w-full h-12 text-base">
                                         Get Started
                                     </Button>
@@ -599,45 +648,89 @@ export function LandingPageContent() {
                             </div>
                         </Card>
 
-                        {/* Lifetime Deal */}
-                        <Card className="border-primary bg-primary/5 h-full flex flex-col relative overflow-hidden transform md:scale-105 shadow-xl">
+                        {/* Agency Monthly */}
+                        <Card className="border-primary bg-primary/5 h-full flex flex-col relative overflow-hidden transform md:scale-105 shadow-xl z-10">
                             <div className="absolute top-0 right-0 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-bl-xl">
-                                BEST VALUE
+                                MOST POPULAR
                             </div>
                             <CardHeader>
-                                <CardTitle className="text-xl font-bold text-primary">Founding Member</CardTitle>
+                                <CardTitle className="text-xl font-bold text-primary">Agency</CardTitle>
                                 <div className="mt-4">
-                                    <span className="text-4xl font-bold text-on-surface">$999</span>
-                                    <span className="text-on-surface-variant ml-2">/ one-time</span>
+                                    <span className="text-4xl font-bold text-on-surface">$99</span>
+                                    <span className="text-on-surface-variant ml-2">/ month</span>
                                 </div>
                                 <CardDescription className="pt-2">
-                                    Pay once, own it forever.
+                                    Ultimate power & video tools.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span><b>Lifetime access</b> to Micropost AI</span>
+                                        <span><b>Unlimited</b> Posts</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>All future updates included</span>
+                                        <span><b>ShortsMaker</b> (Video)</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Priority support channel</span>
+                                        <span>Advanced Analytics</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-on-surface">
                                         <Check className="h-5 w-5 text-primary shrink-0" />
-                                        <span>Early access to new features</span>
+                                        <span>Commercial Usage Rights</span>
                                     </li>
                                 </ul>
                             </CardContent>
                             <div className="p-6 pt-0 mt-auto">
-                                <Link href="/login">
+                                <Link href={`/checkout/${productIds.agencyMonthly}`}>
                                     <Button variant="filled" className="w-full h-12 text-base shadow-primary/25 shadow-lg">
-                                        Get Lifetime Access
+                                        Subscribe Now
+                                    </Button>
+                                </Link>
+                            </div>
+                        </Card>
+
+                        {/* Agency Yearly */}
+                        <Card className="border-tertiary/50 bg-tertiary/5 h-full flex flex-col relative overflow-hidden hover:border-tertiary transition-colors">
+                            <div className="absolute top-0 right-0 bg-tertiary text-on-tertiary text-xs font-bold px-3 py-1 rounded-bl-xl">
+                                BEST VALUE
+                            </div>
+                            <CardHeader>
+                                <CardTitle className="text-xl font-bold text-tertiary">Agency Yearly</CardTitle>
+                                <div className="mt-4">
+                                    <span className="text-4xl font-bold text-on-surface">$399</span>
+                                    <span className="text-on-surface-variant ml-2">/ year</span>
+                                </div>
+                                <CardDescription className="pt-2">
+                                    Founder's Deal (Limited Time).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <ul className="space-y-3 pt-4">
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span><b>Everything in Agency</b></span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>4 Months Free</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>Founder Badge</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-tertiary shrink-0" />
+                                        <span>Priority Support</span>
+                                    </li>
+                                </ul>
+                            </CardContent>
+                            <div className="p-6 pt-0 mt-auto">
+                                <Link href={`/checkout/${productIds.agencyYearly}`}>
+                                    <Button variant="outlined" className="w-full h-12 text-base border-tertiary/50 text-tertiary hover:bg-tertiary/10">
+                                        Get Yearly Deal
                                     </Button>
                                 </Link>
                             </div>
@@ -649,6 +742,7 @@ export function LandingPageContent() {
             {/* C T A   S E C T I O N */}
             <section className="py-24 px-6 bg-primary text-on-primary text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                <div className="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/20 blur-[150px] rounded-full" />
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -656,18 +750,20 @@ export function LandingPageContent() {
                     viewport={{ once: true }}
                     className="max-w-3xl mx-auto relative z-10 space-y-8"
                 >
-                    <h2 className="text-5xl font-bold tracking-tight">Ready to dominate your niche?</h2>
-                    <p className="text-xl text-primary-container/90">
-                        Join the beta today. 14 days free trial.
+                    <h2 className="text-5xl md:text-6xl font-bold tracking-tight">Ready to dominate your niche?</h2>
+                    <p className="text-xl text-primary-container/90 max-w-2xl mx-auto">
+                        Join 5,000+ creators using Micropost to automate their growth.
+                        <br />
+                        <span className="opacity-80 text-lg">No credit card required. Free basic tier available.</span>
                     </p>
                     <div className="flex justify-center flex-col sm:flex-row gap-4 pt-4">
                         <Link href="/login">
-                            <Button size="lg" variant="tonal" className="h-14 px-8 text-lg w-full sm:w-auto">
+                            <Button size="lg" variant="tonal" className="h-16 px-10 text-xl w-full sm:w-auto font-bold shadow-xl shadow-black/20 hover:scale-105 transition-transform">
                                 Start for Free
                             </Button>
                         </Link>
                         <a href="https://calendly.com/a-husen21/introduction-call" target="_blank" rel="noopener noreferrer">
-                            <Button size="lg" variant="text" className="h-14 px-8 text-lg w-full sm:w-auto text-on-primary hover:bg-on-primary/10 hover:text-on-primary">
+                            <Button size="lg" variant="text" className="h-16 px-10 text-xl w-full sm:w-auto text-on-primary hover:bg-on-primary/10 hover:text-on-primary">
                                 Book a Demo
                             </Button>
                         </a>

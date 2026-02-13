@@ -14,19 +14,25 @@ jobs:
           # Check both Variables (Vars) and Secrets
           URL_VAR: ${{ vars.APP_URL }}
           URL_SECRET: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           # Use Variable if set, otherwise fallback to Secret
           TARGET_URL="${URL_VAR:-$URL_SECRET}"
           
           if [ -z "$TARGET_URL" ]; then
-            echo "::error::APP_URL is missing! Please add 'APP_URL' to Settings -> Secrets and variables -> Actions (as either a Variable or Secret)."
+            echo "::error::APP_URL is missing! Please add 'APP_URL' to Settings -> Secrets and variables -> Actions."
             exit 1
+          fi
+          
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET is missing! The request may fail with 401 Unauthorized."
           fi
           
           echo "Triggering: $TARGET_URL/api/cron/publish-scheduled"
           
           # Curl flags:
-          # -f: Fail silently (server-side) on HTTP errors (so script exits non-zero)
-          # -v: Verbose (to see if DNS/Connection works)
-          # -L: Follow redirects (important for Vercel/Next.js)
-          curl -f -v -L "$TARGET_URL/api/cron/publish-scheduled"
+          # -f: Fail silently (server-side) on HTTP errors
+          # -v: Verbose
+          # -L: Follow redirects
+          # -H: Add Authorization header
+          curl -f -v -L -H "Authorization: Bearer $CRON_SECRET" "$TARGET_URL/api/cron/publish-scheduled"

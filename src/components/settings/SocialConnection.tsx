@@ -5,17 +5,27 @@ import { Linkedin, Twitter, Check, AtSign, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { disconnectAccount } from "@/lib/actions";
 
 interface SocialConnectionProps {
     provider: "twitter" | "linkedin" | "threads";
     isConnected: boolean;
     isExpired?: boolean;
+    clientId?: string | null;
 }
 
-export function SocialConnection({ provider, isConnected, isExpired }: SocialConnectionProps) {
+export function SocialConnection({ provider, isConnected, isExpired, clientId }: SocialConnectionProps) {
     const [isLoading, setIsLoading] = useState(false);
     const handleConnect = async () => {
         setIsLoading(true);
+        // Set cookie so server-side linkAccount knows which profile to attach to
+        if (clientId) {
+            document.cookie = `micropost_connecting_client_id=${clientId}; path=/; max-age=300`;
+        } else {
+            // Clear it if connecting for personal (explicit null)
+            document.cookie = "micropost_connecting_client_id=; path=/; max-age=0";
+        }
+
         try {
             await signIn(provider, { callbackUrl: "/dashboard/settings" });
         } catch (error) {
@@ -25,7 +35,14 @@ export function SocialConnection({ provider, isConnected, isExpired }: SocialCon
         }
     };
     const handleDisconnect = async () => {
-        alert("To disconnect, please revoke access from the platform directly.");
+        setIsLoading(true);
+        try {
+            await disconnectAccount(provider);
+        } catch (error) {
+            console.error("Failed to disconnect:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const isTwitter = provider === "twitter";

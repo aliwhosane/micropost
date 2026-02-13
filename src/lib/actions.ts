@@ -16,6 +16,10 @@ export async function addTopic(formData: FormData) {
         throw new Error("Unauthorized");
     }
 
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+
     const topicName = formData.get("topic") as string;
     const notes = formData.get("notes") as string;
     const stance = formData.get("stance") as string;
@@ -37,7 +41,8 @@ export async function addTopic(formData: FormData) {
             userId: user.id,
             notes: notes || null,
             stance: stance || "NEUTRAL",
-        },
+            clientProfileId: activeClientId || null,
+        } as any,
     });
 
     revalidatePath("/dashboard/topics");
@@ -99,6 +104,10 @@ export async function updatePreferences(formData: FormData) {
     const session = await auth();
     if (!session?.user?.email) throw new Error("Unauthorized");
 
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
+
     const postsPerDay = parseInt(formData.get("postsPerDay") as string); // Legacy support
     const twitterPostsPerDay = parseInt(formData.get("twitterPostsPerDay") as string);
     const linkedinPostsPerDay = parseInt(formData.get("linkedinPostsPerDay") as string);
@@ -107,34 +116,47 @@ export async function updatePreferences(formData: FormData) {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { preferences: true }
+        select: { id: true, preferences: true }
     });
 
     if (!user) throw new Error("User not found");
 
-    // Create or Update
-    if (user.preferences) {
-        await prisma.preferences.update({
-            where: { userId: user.id },
+    if (activeClientId) {
+        // Update Client Profile Settings
+        await prisma.clientProfile.update({
+            where: { id: activeClientId },
             data: {
-                postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
                 twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
                 linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
                 threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
                 styleSample,
-            },
+            } as any
         });
     } else {
-        await prisma.preferences.create({
-            data: {
-                userId: user.id,
-                postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
-                twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
-                linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
-                threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
-                styleSample,
-            },
-        });
+        // Update Personal Preferences
+        if (user.preferences) {
+            await prisma.preferences.update({
+                where: { userId: user.id },
+                data: {
+                    postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
+                    twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
+                    linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
+                    threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
+                    styleSample,
+                },
+            });
+        } else {
+            await prisma.preferences.create({
+                data: {
+                    userId: user.id,
+                    postsPerDay: isNaN(postsPerDay) ? 1 : postsPerDay,
+                    twitterPostsPerDay: isNaN(twitterPostsPerDay) ? 1 : twitterPostsPerDay,
+                    linkedinPostsPerDay: isNaN(linkedinPostsPerDay) ? 1 : linkedinPostsPerDay,
+                    threadsPostsPerDay: isNaN(threadsPostsPerDay) ? 1 : threadsPostsPerDay,
+                    styleSample,
+                },
+            });
+        }
     }
 
     revalidatePath("/dashboard/settings");
@@ -180,7 +202,8 @@ export async function approvePost(postId: string, scheduledAt?: string) {
             userId: session.user.id!,
             content: post.content,
             platform: post.platform!,
-            imageUrl: post.imageUrl
+            imageUrl: post.imageUrl,
+            clientProfileId: post.clientProfileId
         });
 
         if (result.success) {
@@ -321,10 +344,12 @@ export async function triggerManualGeneration(formData?: FormData) {
     let temporaryThoughts;
     let framework;
     let platforms: string[] | undefined;
+    let clientId: string | undefined;
 
     if (formData) {
         temporaryThoughts = formData.get("thoughts") as string;
         framework = formData.get("framework") as string;
+        clientId = formData.get("clientId") as string;
         const platformsJson = formData.get("platforms") as string;
         if (platformsJson) {
             try {
@@ -335,6 +360,22 @@ export async function triggerManualGeneration(formData?: FormData) {
         }
     }
 
-    await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms);
+    await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms, clientId);
     revalidatePath("/dashboard");
+}
+
+export async function disconnectAccount(provider: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    // "twitter", "linkedin", "threads"
+    await prisma.account.deleteMany({
+        where: {
+            userId: userId,
+            provider: provider.toLowerCase(),
+        },
+    });
+
+    revalidatePath("/dashboard/settings");
 }
