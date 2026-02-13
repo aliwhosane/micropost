@@ -2,11 +2,12 @@ name: Publish Scheduled Posts
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
   cron:
+    environment: prod
     runs-on: ubuntu-latest
     steps:
       - name: Call Publish Endpoint
@@ -15,9 +16,12 @@ jobs:
           URL_VAR: ${{ vars.APP_URL }}
           URL_SECRET: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_SECRET_VAR: ${{ vars.CRON_SECRET }}
         run: |
           # Use Variable if set, otherwise fallback to Secret
           TARGET_URL="${URL_VAR:-$URL_SECRET}"
+          # Prefer Secret, fallback to Variable
+          CRON_SECRET="${CRON_SECRET:-$CRON_SECRET_VAR}"
           
           if [ -z "$TARGET_URL" ]; then
             echo "::error::APP_URL is missing! Please add 'APP_URL' to Settings -> Secrets and variables -> Actions."

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, LogOut, Settings, ChevronDown, Sparkles } from "lucide-react";
+import { User, LogOut, Settings, ChevronDown, Sparkles, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions";
@@ -79,6 +79,18 @@ export function UserButton({ user }: UserButtonProps) {
                                 Upgrade Plan
                             </Button>
                         </Link>
+                        <Button
+                            variant="text"
+                            onClick={() => {
+                                localStorage.removeItem("micropost_onboarding_completed");
+                                localStorage.removeItem("micropost_getting_started_dismissed");
+                                window.location.reload();
+                            }}
+                            className="w-full justify-start h-9 px-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30"
+                        >
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            Restart Onboarding
+                        </Button>
                     </div>
 
                     <div className="h-px bg-outline-variant/10 my-1" />

@@ -8,6 +8,7 @@ import { PostCard } from "@/components/dashboard/PostCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveTopicsCard } from "@/components/dashboard/ActiveTopicsCard";
 import { GenerationWizard } from "@/components/dashboard/GenerationWizard";
+import { GettingStarted } from "@/components/dashboard/GettingStarted";
 import { triggerManualGeneration } from "@/lib/actions";
 
 export default async function DashboardPage() {
@@ -16,7 +17,13 @@ export default async function DashboardPage() {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true }
+        select: {
+            id: true,
+            preferences: true,
+            accounts: {
+                select: { provider: true } // Minimal fetch
+            }
+        }
     });
 
     if (!user) return <div>User not found</div>;
@@ -45,8 +52,17 @@ export default async function DashboardPage() {
 
     const { totalPostsCount, publishedPostsCount, activeTopicsCount } = stats;
 
+    const gettingStartedProgress = {
+        twitterConnected: user.accounts.some((a) => a.provider === "twitter"),
+        contentAnalyzed: !!((user.preferences as any)?.styleSample && (user.preferences as any).styleSample.length > 10),
+        topicsAdded: activeTopicsCount > 0,
+        generatedInfo: totalPostsCount > 0, // Simplified check
+        postPublished: publishedPostsCount > 0
+    };
+
     return (
         <div className="space-y-8">
+            <GettingStarted progress={gettingStartedProgress} />
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight text-on-surface">Overview</h2>
                 <GenerationWizard />
