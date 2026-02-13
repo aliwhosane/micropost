@@ -131,6 +131,7 @@ export function PostCardActions({
 
                 {/* Secondary Actions - Hidden until hover */}
                 <div className="flex items-center gap-2 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300">
+                    <div className="h-4 w-px bg-outline-variant/30 mx-1" />
                     <Button
                         size="sm"
                         variant="ghost"

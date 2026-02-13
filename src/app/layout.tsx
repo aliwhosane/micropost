@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
   },
-  description: siteConfig.description,
-  keywords: ["AI social media generator", "social media automation", "ghostwriter AI", "twitter generator", "linkedin post generator"],
+  description: "Free AI Social Media Ghostwriter. Generate viral LinkedIn posts, Twitter threads, and images in seconds. No credit card required.",
+  keywords: ["AI social media generator", "free linkedin post generator", "viral tweet generator", "AI ghostwriter free", "social media scheduling", "personal branding AI", "thread maker"],
   authors: [
     {
       name: siteConfig.creator,
@@ -43,8 +43,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
-    description: siteConfig.description,
+    description: "The AI ghostwriter for LinkedIn & Twitter. Viral frameworks, image gen, and scheduling.",
     creator: "@micropostai",
+    images: ["/twitter-image"], // Uses the dynamic route twitter-image.tsx
   },
   icons: {
     icon: "/favicon.svg",

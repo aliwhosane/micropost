@@ -83,9 +83,9 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                     initial="hidden"
                     animate="show"
                 >
-                    <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-variant/50 border border-outline-variant/30 text-on-surface-variant text-sm font-medium">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <span>v2.5 is live: Viral Frameworks, Image Gen & More.</span>
+                    <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-variant/50 border border-primary/20 text-primary text-sm font-medium shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                        <Sparkles className="h-4 w-4 fill-primary" />
+                        <span>New: The All-In-One Viral Engine is Here</span>
                     </motion.div>
 
                     <motion.h1
@@ -94,7 +94,7 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                     >
                         Stop Writing. <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-tertiary to-primary bg-[length:200%_auto] animate-gradient">
-                            Viral Content Engine.
+                            Start Growing.
                         </span>
                     </motion.h1>
 
@@ -102,16 +102,20 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                         className="text-xl md:text-2xl text-on-surface-variant max-w-3xl mx-auto leading-relaxed"
                         variants={item}
                     >
-                        The AI ghostwriter that learns your voice, fills your content calendar in minutes, and posts for you. <span className="text-on-surface font-semibold">Finally, consistency without the burnout.</span>
+                        The AI ghostwriter that actually <b>learns your voice</b>. Creates viral threads, LinkedIn posts, and visuals in seconds.
+                        <br />
+                        <span className="text-on-surface font-semibold">Consistently viral, automatically.</span>
                     </motion.p>
 
-                    <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+                    <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4 pt-8 items-center">
                         <Link href="/login">
                             <Button size="lg" className="rounded-full h-16 px-12 text-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
-                                Generate My First Post <ArrowRight className="ml-2 h-6 w-6" />
+                                Start for Free <ArrowRight className="ml-2 h-6 w-6" />
                             </Button>
                         </Link>
-
+                        <p className="text-sm text-on-surface-variant/60 mt-4 sm:mt-0 sm:absolute sm:-bottom-8">
+                            * No credit card required. Free basic tier available.
+                        </p>
                     </motion.div>
 
                     {/* Social Proof Mini-Bar */}
@@ -119,8 +123,8 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                         {/* Placeholders for logos (Text for now) */}
                         <span className="text-xl font-bold font-mono">X (Twitter)</span>
                         <span className="text-xl font-bold font-mono">LinkedIn</span>
-                        <span className="text-xl font-bold font-mono">ProductHunt</span>
-                        <span className="text-xl font-bold font-mono">IndieHackers</span>
+                        <span className="text-xl font-bold font-mono">Threads</span>
+                        <span className="text-xl font-bold font-mono">Instagram</span>
                     </motion.div>
                 </motion.div>
             </section>
@@ -565,11 +569,48 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                     <div className="text-center mb-16 space-y-4">
                         <h2 className="text-4xl font-bold tracking-tight text-on-surface">Fair & Simple Pricing</h2>
                         <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-                            Choose the plan that fits your growth stage.
+                            Start for free, upgrade when you go viral.
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                        {/* Free Tier */}
+                        <Card className="border-outline-variant/40 bg-surface h-full flex flex-col hover:border-outline-variant/60 transition-colors">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-medium text-on-surface-variant">Free</CardTitle>
+                                <div className="mt-4">
+                                    <span className="text-4xl font-bold text-on-surface">$0</span>
+                                    <span className="text-on-surface-variant ml-2">/ forever</span>
+                                </div>
+                                <CardDescription className="pt-2">
+                                    For hobbyists.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <ul className="space-y-3 pt-4">
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>5 Posts per month</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>Access to Free Tools</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 text-on-surface-variant">
+                                        <Check className="h-5 w-5 text-on-surface-variant shrink-0" />
+                                        <span>Basic Formatting</span>
+                                    </li>
+                                </ul>
+                            </CardContent>
+                            <div className="p-6 pt-0 mt-auto">
+                                <Link href="/login">
+                                    <Button variant="outlined" className="w-full h-12 text-base">
+                                        Start Free
+                                    </Button>
+                                </Link>
+                            </div>
+                        </Card>
+
                         {/* Pro Plan */}
                         <Card className="border-outline-variant/40 bg-surface h-full flex flex-col hover:border-primary/50 transition-colors">
                             <CardHeader>
@@ -579,7 +620,7 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                                     <span className="text-on-surface-variant ml-2">/ month</span>
                                 </div>
                                 <CardDescription className="pt-2">
-                                    For serious creators.
+                                    For solo creators.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
@@ -701,6 +742,7 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
             {/* C T A   S E C T I O N */}
             <section className="py-24 px-6 bg-primary text-on-primary text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                <div className="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/20 blur-[150px] rounded-full" />
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -708,18 +750,20 @@ export function LandingPageContent({ productIds }: LandingPageContentProps) {
                     viewport={{ once: true }}
                     className="max-w-3xl mx-auto relative z-10 space-y-8"
                 >
-                    <h2 className="text-5xl font-bold tracking-tight">Ready to dominate your niche?</h2>
-                    <p className="text-xl text-primary-container/90">
-                        Join the beta today. 14 days free trial.
+                    <h2 className="text-5xl md:text-6xl font-bold tracking-tight">Ready to dominate your niche?</h2>
+                    <p className="text-xl text-primary-container/90 max-w-2xl mx-auto">
+                        Join 5,000+ creators using Micropost to automate their growth.
+                        <br />
+                        <span className="opacity-80 text-lg">No credit card required. Free basic tier available.</span>
                     </p>
                     <div className="flex justify-center flex-col sm:flex-row gap-4 pt-4">
                         <Link href="/login">
-                            <Button size="lg" variant="tonal" className="h-14 px-8 text-lg w-full sm:w-auto">
+                            <Button size="lg" variant="tonal" className="h-16 px-10 text-xl w-full sm:w-auto font-bold shadow-xl shadow-black/20 hover:scale-105 transition-transform">
                                 Start for Free
                             </Button>
                         </Link>
                         <a href="https://calendly.com/a-husen21/introduction-call" target="_blank" rel="noopener noreferrer">
-                            <Button size="lg" variant="text" className="h-14 px-8 text-lg w-full sm:w-auto text-on-primary hover:bg-on-primary/10 hover:text-on-primary">
+                            <Button size="lg" variant="text" className="h-16 px-10 text-xl w-full sm:w-auto text-on-primary hover:bg-on-primary/10 hover:text-on-primary">
                                 Book a Demo
                             </Button>
                         </a>
