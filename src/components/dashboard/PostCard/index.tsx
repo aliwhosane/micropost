@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Download, X } from "lucide-react";
+import { Download, X, ImagePlus, Upload } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { approvePost, rejectPost, updatePostContent, regeneratePostAction } from "@/lib/actions";
 import { usePostSelection } from "@/hooks/usePostSelection";
 import { usePostScheduling } from "@/hooks/usePostScheduling";
@@ -42,6 +43,7 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     const cardRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const schedulePopoverRef = useRef<HTMLDivElement>(null);
 
     // Custom Hooks
@@ -249,53 +251,62 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && !isEditing && (
                 <div className="pt-2 border-t border-outline-variant/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-in-out">
                     {!showVisionSelector ? (
-                        <div className="flex items-center gap-2 mt-1">
-                            <button
+                        <div className="flex items-center gap-2 mt-1 w-full">
+                            <Button
+                                variant="outlined"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setShowVisionSelector(true);
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-3 py-2 rounded-xl hover:bg-surface-variant/30 border border-transparent hover:border-outline-variant/20 group/btn"
+                                className="flex-1 border-dashed border-outline-variant/40 hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant hover:text-primary h-12"
                             >
-                                <span className="text-lg group-hover/btn:scale-110 transition-transform">✨</span>
-                                <span>Add Visual</span>
-                            </button>
+                                <ImagePlus className="w-4 h-4 mr-2" />
+                                Add Visual
+                            </Button>
 
                             {/* Custom Upload */}
-                            <label className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-3 py-2 rounded-xl hover:bg-surface-variant/30 border border-transparent hover:border-outline-variant/20 cursor-pointer group/btn">
-                                <span className="text-lg group-hover/btn:scale-110 transition-transform">📤</span>
-                                <span>Upload</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onClick={(e) => e.stopPropagation()} // Stop click propagation for input too
-                                    onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
+                            <Button
+                                variant="outlined"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    fileInputRef.current?.click();
+                                }}
+                                className="flex-1 border-dashed border-outline-variant/40 hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant hover:text-primary h-12"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Image
+                            </Button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onClick={(e) => e.stopPropagation()} // Stop click propagation for input too
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
 
-                                        const formData = new FormData();
-                                        formData.append("file", file);
+                                    const formData = new FormData();
+                                    formData.append("file", file);
 
-                                        toast.promise(
-                                            uploadImageAction(formData).then(async (res) => {
-                                                if (res.success && res.url) {
-                                                    setImageUrl(res.url);
-                                                    await savePostImageAction(id, res.url);
-                                                    router.refresh();
-                                                    return "Image uploaded!";
-                                                }
-                                                throw new Error(res.error);
-                                            }),
-                                            {
-                                                loading: 'Uploading...',
-                                                success: 'Image uploaded!',
-                                                error: 'Upload failed'
+                                    toast.promise(
+                                        uploadImageAction(formData).then(async (res) => {
+                                            if (res.success && res.url) {
+                                                setImageUrl(res.url);
+                                                await savePostImageAction(id, res.url);
+                                                router.refresh();
+                                                return "Image uploaded!";
                                             }
-                                        );
-                                    }}
-                                />
-                            </label>
+                                            throw new Error(res.error);
+                                        }),
+                                        {
+                                            loading: 'Uploading...',
+                                            success: 'Image uploaded!',
+                                            error: 'Upload failed'
+                                        }
+                                    );
+                                }}
+                            />
                         </div>
                     ) : (
                         <div className="space-y-2">

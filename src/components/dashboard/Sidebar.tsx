@@ -44,7 +44,7 @@ export function Sidebar() {
                                     <Button
                                         variant="ghost"
                                         className={cn(
-                                            "w-full justify-start h-12 rounded-2xl text-base font-medium transition-all duration-300",
+                                            "w-full justify-start h-12 rounded-2xl text-base font-medium transition-all duration-300 whitespace-nowrap",
                                             isActive
                                                 ? "bg-primary/10 text-primary-dark shadow-sm hover:bg-primary/20"
                                                 : "text-on-surface-variant hover:bg-surface-variant/50 hover:pl-5 hover:text-on-surface"
