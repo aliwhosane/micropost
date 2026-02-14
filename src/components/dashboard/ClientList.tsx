@@ -12,7 +12,7 @@ import { MoreVertical, Pencil, Plus, Trash2, Users, Twitter, Linkedin, AtSign } 
 import { deleteClientProfile, updateClientProfile, createClientProfile } from "@/app/actions/clients";
 import { toast } from "sonner";
 import { useClient } from "@/components/dashboard/ClientSwitcher";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
 import { connectClientAccount } from "@/app/actions/auth-client";
 import { cn } from "@/lib/utils";
 

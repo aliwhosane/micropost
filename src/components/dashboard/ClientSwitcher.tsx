@@ -11,7 +11,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/Dropdown"; // Assuming we have this or need to create/import generic primitives if not
+} from "@/components/ui/DropdownMenu";
 import { getClientProfiles, createClientProfile, type ClientProfileData } from "@/app/actions/clients";
 import { switchWorkspace } from "@/app/actions/workspace";
 import { useRouter } from "next/navigation";
