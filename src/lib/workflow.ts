@@ -149,6 +149,15 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             : user.accounts.some((a: any) => a.provider === "twitter");
 
         if (shouldRunFor("TWITTER") && (hasTwitter || availablePlatforms.includes("TWITTER"))) {
+            // Get current post count to determine if we should use trends (Every 3rd post)
+            const existingTwitterCount = await prisma.post.count({
+                where: {
+                    userId: user.id,
+                    platform: "TWITTER",
+                    clientProfileId: clientId || null
+                }
+            });
+
             for (let i = 0; i < twitterCount; i++) {
                 generationTasks.push(async () => {
                     try {
@@ -159,6 +168,18 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             notes: t.notes,
                             stance: t.stance
                         }));
+
+                        // Determine if this specific post should use trends
+                        // Post #3, #6, #9... uses trends.
+                        const virtualCount = existingTwitterCount + i + 1;
+                        const useTrends = virtualCount % 3 === 0;
+                        const currentNewsContext = useTrends ? newsContext : undefined;
+
+                        if (useTrends && newsContext) {
+                            console.log(`[TrendLogic] User ${user.id} - TWITTER - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
+                        } else {
+                            // console.log(`[TrendLogic] User ${user.id} - TWITTER - Post #${virtualCount} -> STANDARD POST`);
+                        }
 
                         let safeThoughts = temporaryThoughts;
                         if (clientContext) {
@@ -174,7 +195,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             platform: "TWITTER",
                             topicAttributes: currentTopicAttributes,
                             temporaryThoughts: safeThoughts,
-                            newsContext,
+                            newsContext: currentNewsContext,
                             framework: currentFramework
                         });
 
@@ -208,10 +229,28 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             : user.accounts.some((a: any) => a.provider === "linkedin");
 
         if (shouldRunFor("LINKEDIN") && (hasLinkedin || availablePlatforms.includes("LINKEDIN"))) {
+            // Get current post count to determine if we should use trends (Every 3rd post)
+            const existingLinkedinCount = await prisma.post.count({
+                where: {
+                    userId: user.id,
+                    platform: "LINKEDIN",
+                    clientProfileId: clientId || null
+                }
+            });
+
             for (let i = 0; i < linkedinCount; i++) {
                 generationTasks.push(async () => {
                     try {
                         const currentFramework = manualFramework || selectRandomFramework();
+
+                        // Determine if this specific post should use trends
+                        const virtualCount = existingLinkedinCount + i + 1;
+                        const useTrends = virtualCount % 3 === 0;
+                        const currentNewsContext = useTrends ? newsContext : undefined;
+
+                        if (useTrends && newsContext) {
+                            console.log(`[TrendLogic] User ${user.id} - LINKEDIN - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
+                        }
 
                         const { content, topic } = await generateSocialPost({
                             topics: topicNames,
@@ -223,7 +262,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                                 stance: t.stance
                             })),
                             temporaryThoughts,
-                            newsContext,
+                            newsContext: currentNewsContext,
                             framework: currentFramework
                         });
 
@@ -257,10 +296,28 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             : user.accounts.some((a: any) => a.provider === "threads");
 
         if (shouldRunFor("THREADS") && (hasThreads || availablePlatforms.includes("THREADS"))) {
+            // Get current post count to determine if we should use trends (Every 3rd post)
+            const existingThreadsCount = await prisma.post.count({
+                where: {
+                    userId: user.id,
+                    platform: "THREADS",
+                    clientProfileId: clientId || null
+                }
+            });
+
             for (let i = 0; i < threadsCount; i++) {
                 generationTasks.push(async () => {
                     try {
                         const currentFramework = manualFramework || selectRandomFramework();
+
+                        // Determine if this specific post should use trends
+                        const virtualCount = existingThreadsCount + i + 1;
+                        const useTrends = virtualCount % 3 === 0;
+                        const currentNewsContext = useTrends ? newsContext : undefined;
+
+                        if (useTrends && newsContext) {
+                            console.log(`[TrendLogic] User ${user.id} - THREADS - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
+                        }
 
                         const { content, topic } = await generateSocialPost({
                             topics: topicNames,
@@ -272,7 +329,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                                 stance: t.stance
                             })),
                             temporaryThoughts,
-                            newsContext,
+                            newsContext: currentNewsContext,
                             framework: currentFramework
                         });
 

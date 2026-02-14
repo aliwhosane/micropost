@@ -51,7 +51,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             authorization: {
                 url: "https://twitter.com/i/oauth2/authorize",
                 params: {
-                    scope: "users.read tweet.read tweet.write offline.access",
+                    scope: "users.read tweet.read tweet.write offline.access media.write",
                 },
             },
         }),
@@ -80,7 +80,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 },
             },
             token: {
-                url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL}/api/auth/threads/token`,
+                url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://micropost-ai.com"}/api/auth/threads/token`,
             },
             client: {
                 token_endpoint_auth_method: "client_secret_post",

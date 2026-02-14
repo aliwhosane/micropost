@@ -197,13 +197,13 @@ export async function generateAiImage(concept: string, platform: "TWITTER" | "LI
 
     // 2. Generate Image using NEW SDK
     try {
-        console.log("Using @google/genai SDK with model:", "gemini-2.5-flash-image");
+        console.log("Using @google/genai SDK with model:", "gemini-3-pro-image-preview");
 
         // Initialize new client
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3-pro-image-preview",
             contents: {
                 parts: [
                     { text: finalPrompt }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { TwitterApi } from "twitter-api-v2";
+// import { TwitterApi } from "twitter-api-v2"; // Removed
+import { Client, OAuth2 } from "@xdevplatform/xdk";
 import axios from "axios";
 
 export async function publishToSocials(post: { id: string; userId: string; content: string; platform: string; imageUrl?: string | null; clientProfileId?: string | null }) {
@@ -44,15 +45,16 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
             // 1. Refresh if expired or about to expire (within 24 hours)
             if (expiresAt && (expiresAt - now < 86400) && account.refresh_token) {
-                console.log("Twitter token expired or close to expiration. Refreshing...");
+                console.log("Twitter token expired or close to expiration. Refreshing using XDK...");
                 try {
-                    // TwitterApi requires client ID and secret for refresh
-                    const client = new TwitterApi({
+                    const oauth2 = new OAuth2({
                         clientId: process.env.AUTH_TWITTER_ID?.trim()!,
                         clientSecret: process.env.AUTH_TWITTER_SECRET?.trim()!,
+                        redirectUri: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/callback/twitter`, // Required by XDK types, though maybe not for refresh
+                        scope: ["tweet.read", "tweet.write", "users.read", "offline.access"], // Typical scopes
                     });
 
-                    const { client: refreshedClient, accessToken: newAccessToken, refreshToken: newRefreshToken, expiresIn } = await client.refreshOAuth2Token(account.refresh_token);
+                    const tokenResponse = await oauth2.refreshToken(account.refresh_token);
 
                     // Update database
                     await prisma.account.update({
@@ -63,20 +65,22 @@ export async function publishToSocials(post: { id: string; userId: string; conte
                             },
                         },
                         data: {
-                            access_token: newAccessToken,
-                            refresh_token: newRefreshToken,
-                            expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+                            access_token: tokenResponse.access_token,
+                            refresh_token: tokenResponse.refresh_token || account.refresh_token,
+                            expires_at: Math.floor(Date.now() / 1000) + tokenResponse.expires_in,
                         },
                     });
 
-                    accessToken = newAccessToken;
-                    console.log("Successfully refreshed Twitter token.");
+                    accessToken = tokenResponse.access_token;
+                    console.log("Successfully refreshed Twitter token via XDK.");
                 } catch (refreshError: any) {
                     console.error("Failed to refresh Twitter token:", refreshError);
-                    if (refreshError.code) console.error("Refresh Error Code:", refreshError.code);
-                    if (refreshError.data) console.error("Refresh Error Data:", JSON.stringify(refreshError.data, null, 2));
 
-                    // Check below will catch if it is still expired
+                    // XDK error handling might differ, but we log and proceed/fail similarly
+                    if (refreshError?.data?.error === 'invalid_request' || refreshError?.code === 400) {
+                        console.error("Critical: Twitter refresh token is invalid. User must re-authenticate.");
+                        throw new Error("Twitter session expired. Please sign out and sign in again.");
+                    }
                 }
             }
 
@@ -89,34 +93,83 @@ export async function publishToSocials(post: { id: string; userId: string; conte
 
             if (!accessToken) throw new Error("No access token available for Twitter");
 
-            const client = new TwitterApi(accessToken);
+            const client = new Client({ accessToken });
 
             let mediaId = undefined;
             if (post.imageUrl && post.imageUrl.startsWith("data:")) {
                 try {
+                    console.log("Starting Twitter Media Upload (XDK Chunked Flow)...");
                     // Extract base64 (remove data:image/png;base64, prefix)
                     const base64Data = post.imageUrl.split(",")[1];
+                    // Note: initializeUpload expects totalBytes. We can get this from the base64 string length roughly or by creating a buffer.
                     const buffer = Buffer.from(base64Data, "base64");
+                    const totalBytes = buffer.length;
 
-                    // Upload media (v1.1)
-                    const mediaIds = await client.v1.uploadMedia(buffer, { mimeType: 'image/png' });
-                    mediaId = mediaIds;
-                    console.log("Uploaded media to Twitter:", mediaId);
-                } catch (e) {
-                    console.error("Twitter media upload failed", e);
+                    // Step 1: Initialize
+                    const initResponse = await client.media.initializeUpload({
+                        body: {
+                            totalBytes: totalBytes,
+                            mediaType: "image/png", // Assuming PNG for now from typical canvas exports
+                            mediaCategory: "tweet_image"
+                        }
+                    });
+
+                    // Extract Media ID
+                    const initData = initResponse.data;
+                    let uploadedMediaId = "";
+                    if (initData) {
+                        if (initData.id) {
+                            uploadedMediaId = initData.id;
+                        } else if (initData.mediaKey) {
+                            uploadedMediaId = initData.mediaKey;
+                        }
+                    } else {
+                        throw new Error("No data in Twitter INIT response");
+                    }
+
+                    if (!uploadedMediaId) {
+                        throw new Error("Failed to get Media ID from Twitter INIT response");
+                    }
+                    console.log(`Media ID initialized: ${uploadedMediaId}`);
+
+                    // Step 2: Append (Chunked)
+                    // We upload the whole buffer in one chunk for simplicity if it's small enough (< 5MB usually fine, but let's stick to simple implementation)
+                    // XDK appendUpload takes media as string (base64) presumably in the body based on our debug
+                    await client.media.appendUpload(uploadedMediaId, {
+                        body: {
+                            media: base64Data,
+                            segmentIndex: 0
+                        }
+                    });
+                    console.log("Media appended.");
+
+                    // Step 3: Finalize
+                    const finalizeResponse = await client.media.finalizeUpload(uploadedMediaId);
+                    console.log("Media finalized.", finalizeResponse.data);
+
+                    // Check status? usually finalizing is enough for small images.
+                    // For videos we might need to wait for processing, but for images it's usually instant.
+
+                    mediaId = uploadedMediaId;
+                    console.log("Uploaded media to Twitter (XDK):", mediaId);
+                } catch (e: any) {
+                    console.error("Twitter media upload failed (XDK)", e);
+                    if (e.data) console.error("XDK Error Data:", JSON.stringify(e.data, null, 2));
                     throw e; // Fail the post if media upload fails
                 }
             }
 
             if (mediaId) {
-                await client.v2.tweet({
+                await client.posts.create({
                     text: post.content,
                     media: { media_ids: [mediaId] }
                 });
             } else {
-                await client.v2.tweet(post.content);
+                await client.posts.create({
+                    text: post.content
+                });
             }
-            console.log("Successfully posted to Twitter");
+            console.log("Successfully posted to Twitter via XDK");
         } else if (provider === "linkedin") {
             // LinkedIn API v2: ugcPosts or shares
             // We need the person's URN (ID). 

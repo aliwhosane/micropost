@@ -18,11 +18,20 @@ export async function POST(request: Request) {
 
         // threads requires client_id/secret in body? NextAuth sends it based on client settings.
         // We will ensure they are present.
+        if (!body.has("client_id")) {
+            body.append("client_id", process.env.AUTH_THREADS_ID!);
+        }
+        if (!body.has("client_secret")) {
+            body.append("client_secret", process.env.AUTH_THREADS_SECRET!);
+        }
 
         // Log for debugging
         console.log("[Token Proxy] Forwarding request to Threads", {
             redirect_uri: body.get("redirect_uri"),
-            code_preview: body.get("code")?.slice(0, 5) + "..."
+            code_preview: body.get("code")?.slice(0, 5) + "...",
+            has_client_id: body.has("client_id"),
+            has_client_secret: body.has("client_secret"),
+            grant_type: body.get("grant_type")
         });
 
         const threadsResponse = await fetch("https://graph.threads.net/oauth/access_token", {

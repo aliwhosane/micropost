@@ -26,7 +26,7 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     // Select a random topic from the string name array OR use the news context topic if available
-    let topicName = topics[Math.floor(Math.random() * topics.length)];
+    let topicName = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : "General Industry Trends";
 
     // If news context is present, we might want to infer the topic or just use "Current Events"
     // For now, we'll stick to the random topic selection unless the user specifically overrides, 
