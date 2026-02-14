@@ -360,8 +360,9 @@ export async function triggerManualGeneration(formData?: FormData) {
         }
     }
 
-    await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms, clientId);
+    const results = await runDailyGeneration(session.user.id, temporaryThoughts, framework, platforms, clientId);
     revalidatePath("/dashboard");
+    return results;
 }
 
 export async function disconnectAccount(provider: string) {

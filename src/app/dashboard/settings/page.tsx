@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { SocialConnection } from "@/components/settings/SocialConnection";
 import { Linkedin, Twitter, Save, AlertCircle, Zap, Shield, Wand2, AtSign } from "lucide-react";
 import { AnalyzeButton } from "@/components/settings/AnalyzeButton";
+import { AnalyzeStyleCard } from "@/components/dashboard/Settings/AnalyzeStyleCard";
 import { ProfileOptimizerSection } from "@/components/dashboard/Settings/ProfileOptimizerSection";
 import { PricingCard } from "@/components/settings/PricingCard";
 import { FormSlider } from "@/components/settings/FormSlider";
@@ -178,28 +179,10 @@ export default async function SettingsPage() {
 
                                     {/* Style Settings */}
                                     <div className="space-y-6">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                            <div>
-                                                <h3 className="text-base font-semibold text-on-surface">Writing Style</h3>
-                                                <p className="text-sm text-on-surface-variant mt-1">Provide a sample text for the AI to analyze and mimic.</p>
-                                            </div>
-                                            <AnalyzeButton
-                                                platform="TWITTER"
-                                                isConnected={accounts.some((a: any) => a.provider === "twitter")}
-                                            />
-                                        </div>
-
-                                        <div className="relative">
-                                            <textarea
-                                                name="styleSample"
-                                                className="flex min-h-[200px] w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent transition-all resize-y shadow-inner leading-relaxed"
-                                                placeholder="Paste a few of your best posts here. The AI will learn your tone, vocabulary, and sentence structure..."
-                                                defaultValue={prefs.styleSample || ""}
-                                            />
-                                            <div className="absolute bottom-3 right-3 text-[10px] text-on-surface-variant/50 pointer-events-none bg-surface/80 backdrop-blur-sm px-2 py-1 rounded-md">
-                                                Markdown supported
-                                            </div>
-                                        </div>
+                                        <AnalyzeStyleCard
+                                            initialSample={prefs.styleSample || ""}
+                                            isTwitterConnected={accounts.some((a: any) => a.provider === "twitter")}
+                                        />
                                     </div>
                                     <input type="hidden" name="postsPerDay" value={prefs.postsPerDay} />
                                 </CardContent>

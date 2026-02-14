@@ -115,6 +115,24 @@ export function ClientSwitcher() {
         await switchWorkspace(id); // Server state (cookie)
     };
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <div className="flex items-center gap-3 p-2 rounded-xl border border-transparent w-full opacity-50">
+                <div className="w-10 h-10 rounded-full bg-surface-variant/20" />
+                <div className="flex-1 space-y-2">
+                    <div className="h-3 w-12 bg-surface-variant/20 rounded" />
+                    <div className="h-4 w-24 bg-surface-variant/20 rounded" />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

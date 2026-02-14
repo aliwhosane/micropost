@@ -8,9 +8,10 @@ import { Sparkles } from "lucide-react";
 interface AnalyzeButtonProps {
     platform: "TWITTER";
     isConnected: boolean;
+    onAnalysisComplete?: () => void;
 }
 
-export function AnalyzeButton({ platform, isConnected }: AnalyzeButtonProps) {
+export function AnalyzeButton({ platform, isConnected, onAnalysisComplete }: AnalyzeButtonProps) {
     const [isPending, startTransition] = useTransition();
 
     const handleAnalyze = () => {
@@ -19,7 +20,8 @@ export function AnalyzeButton({ platform, isConnected }: AnalyzeButtonProps) {
         startTransition(async () => {
             try {
                 await analyzeSocialStyleAction(platform);
-                alert("Style analysis complete! Check the style sample box.");
+                // alert("Style analysis complete! Check the style sample box."); // Handled by parent or toast now
+                onAnalysisComplete?.();
             } catch (error) {
                 console.error(error);
                 alert("Failed to analyze style. Make sure you have enough recent original tweets (no replies).");

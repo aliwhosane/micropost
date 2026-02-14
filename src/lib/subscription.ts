@@ -17,13 +17,13 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<SubscriptionTier, PlanLimits> = {
     STARTER: {
-        postsPerDay: 1,
+        postsPerDay: 8,
         shortsPerDay: 0,
         hasAnalytics: false,
         hasUnlimitedShorts: false,
     },
     PRO: {
-        postsPerDay: 3,
+        postsPerDay: 16,
         shortsPerDay: 0,
         hasAnalytics: true,
         hasUnlimitedShorts: false,

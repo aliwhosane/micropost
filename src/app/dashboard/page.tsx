@@ -7,9 +7,8 @@ import { CheckCircle2, Clock, FileText, Hash, Sparkles } from "lucide-react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveTopicsCard } from "@/components/dashboard/ActiveTopicsCard";
-import { GenerationWizard } from "@/components/dashboard/GenerationWizard";
-import { GettingStarted } from "@/components/dashboard/GettingStarted";
-import { triggerManualGeneration } from "@/lib/actions";
+import { MagicComposer } from "@/components/dashboard/MagicComposer";
+import { OnboardingWizard } from "@/components/dashboard/OnboardingWizard";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -28,19 +27,12 @@ export default async function DashboardPage() {
 
     if (!user) return <div>User not found</div>;
 
+    // Check onboarding status
+    const isOnboardingComplete = (user.preferences as any)?.onboardingCompleted ?? false;
+
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const activeClientId = cookieStore.get("micropost_active_client_id")?.value;
-
-    // Filter condition
-    const whereCondition = {
-        userId: user.id,
-        // If activeClientId is set, filter by it. existing nulls are personal posts.
-        // If not set, strictly filter for null (personal) to achieve isolation.
-        clientProfileId: activeClientId || null
-    };
-
-    console.log("Dashboard Debug:", { activeClientId });
 
     const activeClientIdStr = activeClientId || null;
 
@@ -52,66 +44,86 @@ export default async function DashboardPage() {
 
     const { totalPostsCount, publishedPostsCount, activeTopicsCount } = stats;
 
-    const gettingStartedProgress = {
-        twitterConnected: user.accounts.some((a) => a.provider === "twitter"),
-        contentAnalyzed: !!((user.preferences as any)?.styleSample && (user.preferences as any).styleSample.length > 10),
-        topicsAdded: activeTopicsCount > 0,
-        generatedInfo: totalPostsCount > 0, // Simplified check
-        postPublished: publishedPostsCount > 0
+    const isEmptyState = totalPostsCount === 0 && pendingPosts.length === 0;
+
+    const initialConnected = {
+        twitter: user.accounts.some((a) => a.provider === "twitter"),
+        linkedin: user.accounts.some((a) => a.provider === "linkedin"),
+        threads: user.accounts.some((a) => a.provider === "threads"),
     };
 
     return (
-        <div className="space-y-8">
-            <GettingStarted progress={gettingStartedProgress} />
-            <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight text-on-surface">Overview</h2>
-                <GenerationWizard />
-            </div>
+        <div className="space-y-8 relative flex-1 h-full min-h-[calc(100vh-160px)]">
+            {!isOnboardingComplete && <OnboardingWizard initialConnected={initialConnected} />}
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Total Posts" value={totalPostsCount.toString()} icon={FileText} trend="All time" />
-                <StatCard title="Pending Review" value={pendingPosts.length.toString()} icon={Clock} trend="Action needed" />
-                <StatCard title="Published" value={publishedPostsCount.toString()} icon={CheckCircle2} trend="Success" />
-                <StatCard title="Active Topics" value={activeTopicsCount.toString()} icon={Hash} trend="Configuration" />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                        <CardDescription>
-                            {pendingPosts.length > 0
-                                ? `You have ${pendingPosts.length} drafts waiting for approval.`
-                                : "No pending drafts. Generate some content!"}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                            {pendingPosts.map((post: any) => (
-                                <PostCard
-                                    key={post.id}
-                                    id={post.id}
-                                    content={post.content}
-                                    platform={post.platform || "TWITTER"}
-                                    topic={post.topic || "General"}
-                                    createdAt={post.createdAt}
-                                    status={post.status}
-                                    scheduledFor={post.scheduledFor}
-                                />
-                            ))}
-                            {pendingPosts.length === 0 && (
-                                <div className="text-center py-10 text-on-surface-variant">
-                                    <Sparkles className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                                    <p>All caught up!</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-                <div className="col-span-3 space-y-4">
-                    <ActiveTopicsCard activeTopics={activeTopicsList} />
+            {/* If empty state, center the composer. Else, put it at top. */}
+            {isEmptyState ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center -mt-20 pointer-events-none">
+                    <div className="w-full pointer-events-auto">
+                        <MagicComposer isHero={true} />
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div className="flex flex-col gap-6">
+                    <MagicComposer />
+                </div>
+            )}
+
+            {/* Content Feed */}
+            {!isEmptyState && (
+                <>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-3xl font-bold tracking-tight text-on-surface">Overview</h2>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <StatCard title="Total Posts" value={totalPostsCount.toString()} icon={FileText} trend="All time" />
+                        <StatCard title="Pending Review" value={pendingPosts.length.toString()} icon={Clock} trend="Action needed" />
+                        <StatCard title="Published" value={publishedPostsCount.toString()} icon={CheckCircle2} trend="Success" />
+                        <StatCard title="Active Topics" value={activeTopicsCount.toString()} icon={Hash} trend="Configuration" />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                        <Card className="col-span-4">
+                            <CardHeader>
+                                <CardTitle>Recent Activity</CardTitle>
+                                <CardDescription>
+                                    {pendingPosts.length > 0
+                                        ? `You have ${pendingPosts.length} drafts waiting for approval.`
+                                        : "No pending drafts."}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {pendingPosts.map((post: any) => (
+                                        <PostCard
+                                            key={post.id}
+                                            id={post.id}
+                                            content={post.content}
+                                            platform={post.platform || "TWITTER"}
+                                            topic={post.topic || "General"}
+                                            createdAt={post.createdAt}
+                                            status={post.status}
+                                            scheduledFor={post.scheduledFor}
+                                        />
+                                    ))}
+                                    {pendingPosts.length === 0 && (
+                                        <div className="text-center py-10 text-on-surface-variant">
+                                            <Sparkles className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                            <p>All caught up!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <div className="col-span-3 space-y-4">
+                            <ActiveTopicsCard activeTopics={activeTopicsList} />
+                        </div>
+                    </div>
+                </>
+            )}
+
+
         </div>
     );
 }

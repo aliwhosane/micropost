@@ -9,33 +9,29 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  accounts      Account[]
-  sessions      Session[]
-
-  posts       Post[]
-  topics      Topic[]
-  clients     ClientProfile[]
-  preferences Preferences?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Polar.sh Subscription
-  polarSubscriptionId String?
+  id                  String          @id @default(cuid())
+  name                String?
+  email               String?         @unique
+  emailVerified       DateTime?
+  image               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  password            String?
   polarCustomerId     String?
-  subscriptionStatus  String? // active, incomplete, incomplete_expired, past_due, canceled, unpaid
+  polarSubscriptionId String?
   subscriptionPlanId  String?
+  subscriptionStatus  String?
   polarOrderId        String?
+  accounts            Account[]
+  clients             ClientProfile[]
+  posts               Post[]
+  preferences         Preferences?
+  sessions            Session[]
+  topics              Topic[]
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String         @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -47,17 +43,12 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  // Social Account Metadata (for display)
-  accountName   String?
-  accountHandle String?
-  accountImage  String?
-
-  // Client Profile Association
-  clientProfileId String?
-  clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountHandle     String?
+  accountImage      String?
+  accountName       String?
+  clientProfileId   String?
+  clientProfile     ClientProfile? @relation(fields: [clientProfileId], references: [id])
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -78,96 +69,71 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// App Specific Models
-
 model Topic {
-  id      String  @id @default(cuid())
-  name    String
-  userId  String
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled Boolean @default(true)
-  notes   String?
-  stance  String? // "PRO", "ANTI", "NEUTRAL", "BOTH"
-
+  id              String         @id @default(cuid())
+  name            String
+  userId          String
+  enabled         Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  notes           String?
+  stance          String?
   clientProfileId String?
   clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([clientProfileId])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClientProfile {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name           String
-  niche          String?
-  bio            String? // Context for AI generation
-  tone           String? // "Professional", "Witty", etc.
-  targetAudience String?
-  avatarUrl      String?
-
-  posts    Post[]
-  accounts Account[]
-  topics   Topic[]
-
-  // Preferences / Generation Settings
-  twitterPostsPerDay  Int @default(1)
-  linkedinPostsPerDay Int @default(1)
-  threadsPostsPerDay  Int @default(1)
+  id                  String    @id @default(cuid())
+  userId              String
+  name                String
+  niche               String?
+  bio                 String?
+  tone                String?
+  targetAudience      String?
+  avatarUrl           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  linkedinPostsPerDay Int       @default(1)
   styleSample         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
+  threadsPostsPerDay  Int       @default(1)
+  twitterPostsPerDay  Int       @default(1)
+  accounts            Account[]
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts               Post[]
+  topics              Topic[]
 }
 
 model Post {
-  id       String  @id @default(cuid())
-  content  String
-  topic    String?
-  status   String  @default("DRAFT") // DRAFT, PENDING, APPROVED, PUBLISHED, FAILED
-  platform String? // TWITTER, LINKEDIN, BOTH
-  imageUrl String? // URL or Base64 of attached visual
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id              String         @id @default(cuid())
+  content         String
+  topic           String?
+  status          String         @default("DRAFT")
+  platform        String?
+  userId          String
+  scheduledFor    DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  imageUrl        String?
   clientProfileId String?
   clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
-
-  scheduledFor DateTime?
-  publishedAt  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([clientProfileId])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Preferences {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  postsPerDay         Int @default(1) // Deprecated
-  twitterPostsPerDay  Int @default(1)
-  linkedinPostsPerDay Int @default(1)
-  threadsPostsPerDay  Int @default(1)
-
-  styleSample String? // Large text field
-
-  linkedinConnected Boolean @default(false)
-  twitterConnected  Boolean @default(false)
-  threadsConnected  Boolean @default(false)
-
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  postsPerDay         Int      @default(1)
+  styleSample         String?
+  linkedinConnected   Boolean  @default(false)
+  twitterConnected    Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+  linkedinPostsPerDay Int      @default(1)
+  twitterPostsPerDay  Int      @default(1)
+  threadsConnected    Boolean  @default(false)
+  threadsPostsPerDay  Int      @default(1)
+  tone                String?  // "Professional", "Casual", etc.
+  onboardingCompleted Boolean  @default(false)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -3,6 +3,7 @@ import { generateSocialPost, analyzeTrends } from "@/lib/ai";
 import { aggregateNews } from "@/lib/news";
 import { sendDailyDigest } from "@/lib/email";
 import { pLimit } from "@/lib/utils";
+import { getSubscriptionTier, getPlanLimits } from "@/lib/subscription";
 
 export async function runDailyGeneration(targetUserId?: string, temporaryThoughts?: string, manualFramework?: string, targetPlatforms?: string[], clientId?: string) {
     console.log("Starting daily generation workflow...");
@@ -27,14 +28,21 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
     const users = await prisma.user.findMany({
         where: {
             ...(targetUserId ? { id: targetUserId } : {}),
-            preferences: {
-                isNot: null,
-            },
-            topics: {
-                some: {
-                    enabled: true,
-                },
-            },
+            // Only require preferences for automatic runs. Manual runs use defaults if missing.
+            ...(targetUserId ? {} : {
+                preferences: {
+                    isNot: null,
+                }
+            }),
+            // Only require topics if we are doing automatic daily generation (no targetUserId)
+            // For manual generation, users might just want to use the prompt
+            ...(targetUserId ? {} : {
+                topics: {
+                    some: {
+                        enabled: true,
+                    },
+                }
+            }),
         },
         include: {
             preferences: true,
@@ -51,17 +59,42 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
 
     // 2. Process each user in parallel
     const results = await Promise.all(users.map(user => limit(async () => {
-        if (!user.email || !user.preferences) return null;
+        if (!user.email) return null;
+
+        const preferences = user.preferences || {
+            postsPerDay: 1,
+            twitterPostsPerDay: 1,
+            linkedinPostsPerDay: 1,
+            threadsPostsPerDay: 1,
+            styleSample: ""
+        };
 
         // Determine platforms & Settings
         // If clientId is provided, we MUST check the Client's connected accounts and Preferences.
         let availablePlatforms: string[] = [];
         let clientContext: any = null;
 
-        let twitterCount = user.preferences.twitterPostsPerDay || 0;
-        let linkedinCount = user.preferences.linkedinPostsPerDay || 0;
-        let threadsCount = (user.preferences as any).threadsPostsPerDay || 0;
-        let styleSample = user.preferences.styleSample || "";
+        let twitterCount = preferences.twitterPostsPerDay || 0;
+        let linkedinCount = preferences.linkedinPostsPerDay || 0;
+        let threadsCount = (preferences as any).threadsPostsPerDay || 0;
+
+        // If manual run (targetUserId), ensure logic defaults to at least 1 post if preferences are zero/missing
+        if (!!targetUserId) {
+            if (twitterCount === 0) twitterCount = 1;
+            if (linkedinCount === 0) linkedinCount = 1;
+            if (threadsCount === 0) threadsCount = 1;
+        }
+
+        // Apply Subscription Limits
+        const tier = getSubscriptionTier(user);
+        const limitConfig = getPlanLimits(tier);
+        const maxPosts = limitConfig.postsPerDay;
+
+        twitterCount = Math.min(twitterCount, maxPosts);
+        linkedinCount = Math.min(linkedinCount, maxPosts);
+        threadsCount = Math.min(threadsCount, maxPosts);
+
+        let styleSample = preferences.styleSample || "";
         let activeTopics = user.topics.filter((t: any) => t.clientProfileId === null); // Default to personal
 
         if (clientId) {
@@ -96,7 +129,8 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
         const topicNames = activeTopics.map((t: any) => t.name);
 
         // Fallback for demo if no accounts connected at all? 
-        if (availablePlatforms.length === 0) availablePlatforms.push("TWITTER", "LINKEDIN");
+        // Removed per user request: Strict enforcement of connected accounts.
+        // if (availablePlatforms.length === 0) availablePlatforms.push("TWITTER", "LINKEDIN");
 
         // Should function helper to check if we should run for this platform
         const shouldRunFor = (platform: string) => {
@@ -368,9 +402,9 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                 posts: generatedPosts,
                 approvalUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard`,
             });
-            return { userId: user.id, success: true, count: generatedPosts.length, email: emailResult };
+            return { userId: user.id, success: true, count: generatedPosts.length, posts: generatedPosts, email: emailResult };
         }
-        return { userId: user.id, success: true, count: 0, email: null };
+        return { userId: user.id, success: true, count: 0, posts: [], email: null };
     })));
 
     return results.filter(r => r !== null);
