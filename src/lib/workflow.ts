@@ -175,47 +175,38 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
         }
 
         // 3. Generate Posts Parallelly
-        const generationTasks = [];
+        const generationTasks: (() => Promise<void>)[] = [];
 
-        // Twitter Generation Tasks
-        const hasTwitter = clientContext
-            ? clientContext.accounts.some((a: any) => a.provider === "twitter")
-            : user.accounts.some((a: any) => a.provider === "twitter");
-
-        if (shouldRunFor("TWITTER") && (hasTwitter || availablePlatforms.includes("TWITTER"))) {
+        // Helper function for generation
+        const generatePlatformPosts = async (platform: string, count: number) => {
             // Get current post count to determine if we should use trends (Every 3rd post)
-            const existingTwitterCount = await prisma.post.count({
+            const existingCount = await prisma.post.count({
                 where: {
                     userId: user.id,
-                    platform: "TWITTER",
+                    platform: platform as any,
                     clientProfileId: clientId || null
                 }
             });
 
-            for (let i = 0; i < twitterCount; i++) {
+            for (let i = 0; i < count; i++) {
                 generationTasks.push(async () => {
                     try {
                         const currentFramework = manualFramework || selectRandomFramework();
-                        let currentStyle = styleSample;
-                        let currentTopicAttributes = activeTopics.map((t: any) => ({
-                            name: t.name,
-                            notes: t.notes,
-                            stance: t.stance
-                        }));
 
                         // Determine if this specific post should use trends
                         // Post #3, #6, #9... uses trends.
-                        const virtualCount = existingTwitterCount + i + 1;
+                        const virtualCount = existingCount + i + 1;
                         const useTrends = virtualCount % 3 === 0;
                         const currentNewsContext = useTrends ? newsContext : undefined;
 
                         if (useTrends && newsContext) {
-                            console.log(`[TrendLogic] User ${user.id} - TWITTER - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
-                        } else {
-                            // console.log(`[TrendLogic] User ${user.id} - TWITTER - Post #${virtualCount} -> STANDARD POST`);
+                            console.log(`[TrendLogic] User ${user.id} - ${platform} - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
                         }
 
                         let safeThoughts = temporaryThoughts;
+                        let currentStyle = styleSample;
+
+                        // Apply Client Context if applicable
                         if (clientContext) {
                             const ctx = clientContext as any;
                             currentStyle = ctx.tone || styleSample;
@@ -226,8 +217,12 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                         const { content, topic } = await generateSocialPost({
                             topics: topicNames,
                             styleSample: currentStyle || undefined,
-                            platform: "TWITTER",
-                            topicAttributes: currentTopicAttributes,
+                            platform: platform as any,
+                            topicAttributes: activeTopics.map((t: any) => ({
+                                name: t.name,
+                                notes: t.notes,
+                                stance: t.stance
+                            })),
                             temporaryThoughts: safeThoughts,
                             newsContext: currentNewsContext,
                             framework: currentFramework
@@ -237,7 +232,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             data: {
                                 userId: user.id,
                                 content,
-                                platform: "TWITTER",
+                                platform: platform as any,
                                 topic: topic,
                                 status: "PENDING",
                                 clientProfileId: clientId || null,
@@ -251,10 +246,19 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             topic: post.topic || topic,
                         });
                     } catch (err) {
-                        console.error(`Failed to generate Twitter post for user ${user.id}:`, err);
+                        console.error(`Failed to generate ${platform} post for user ${user.id}:`, err);
                     }
                 });
             }
+        };
+
+        // Twitter Generation Tasks
+        const hasTwitter = clientContext
+            ? clientContext.accounts.some((a: any) => a.provider === "twitter")
+            : user.accounts.some((a: any) => a.provider === "twitter");
+
+        if (shouldRunFor("TWITTER") && (hasTwitter || availablePlatforms.includes("TWITTER"))) {
+            await generatePlatformPosts("TWITTER", twitterCount);
         }
 
         // LinkedIn Generation Tasks
@@ -263,65 +267,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             : user.accounts.some((a: any) => a.provider === "linkedin");
 
         if (shouldRunFor("LINKEDIN") && (hasLinkedin || availablePlatforms.includes("LINKEDIN"))) {
-            // Get current post count to determine if we should use trends (Every 3rd post)
-            const existingLinkedinCount = await prisma.post.count({
-                where: {
-                    userId: user.id,
-                    platform: "LINKEDIN",
-                    clientProfileId: clientId || null
-                }
-            });
-
-            for (let i = 0; i < linkedinCount; i++) {
-                generationTasks.push(async () => {
-                    try {
-                        const currentFramework = manualFramework || selectRandomFramework();
-
-                        // Determine if this specific post should use trends
-                        const virtualCount = existingLinkedinCount + i + 1;
-                        const useTrends = virtualCount % 3 === 0;
-                        const currentNewsContext = useTrends ? newsContext : undefined;
-
-                        if (useTrends && newsContext) {
-                            console.log(`[TrendLogic] User ${user.id} - LINKEDIN - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
-                        }
-
-                        const { content, topic } = await generateSocialPost({
-                            topics: topicNames,
-                            styleSample: styleSample || undefined,
-                            platform: "LINKEDIN",
-                            topicAttributes: activeTopics.map((t: any) => ({
-                                name: t.name,
-                                notes: t.notes,
-                                stance: t.stance
-                            })),
-                            temporaryThoughts,
-                            newsContext: currentNewsContext,
-                            framework: currentFramework
-                        });
-
-                        const post = await prisma.post.create({
-                            data: {
-                                userId: user.id,
-                                content,
-                                platform: "LINKEDIN",
-                                topic: topic,
-                                status: "PENDING",
-                                clientProfileId: clientId || null,
-                            } as any,
-                        });
-
-                        generatedPosts.push({
-                            id: post.id,
-                            content: post.content,
-                            platform: post.platform!,
-                            topic: post.topic || topic,
-                        });
-                    } catch (err) {
-                        console.error(`Failed to generate LinkedIn post for user ${user.id}:`, err);
-                    }
-                });
-            }
+            await generatePlatformPosts("LINKEDIN", linkedinCount);
         }
 
         // Threads Generation Tasks
@@ -330,65 +276,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
             : user.accounts.some((a: any) => a.provider === "threads");
 
         if (shouldRunFor("THREADS") && (hasThreads || availablePlatforms.includes("THREADS"))) {
-            // Get current post count to determine if we should use trends (Every 3rd post)
-            const existingThreadsCount = await prisma.post.count({
-                where: {
-                    userId: user.id,
-                    platform: "THREADS",
-                    clientProfileId: clientId || null
-                }
-            });
-
-            for (let i = 0; i < threadsCount; i++) {
-                generationTasks.push(async () => {
-                    try {
-                        const currentFramework = manualFramework || selectRandomFramework();
-
-                        // Determine if this specific post should use trends
-                        const virtualCount = existingThreadsCount + i + 1;
-                        const useTrends = virtualCount % 3 === 0;
-                        const currentNewsContext = useTrends ? newsContext : undefined;
-
-                        if (useTrends && newsContext) {
-                            console.log(`[TrendLogic] User ${user.id} - THREADS - Post #${virtualCount} -> USING TRENDS: "${newsContext.title}"`);
-                        }
-
-                        const { content, topic } = await generateSocialPost({
-                            topics: topicNames,
-                            styleSample: styleSample || undefined,
-                            platform: "THREADS",
-                            topicAttributes: activeTopics.map((t: any) => ({
-                                name: t.name,
-                                notes: t.notes,
-                                stance: t.stance
-                            })),
-                            temporaryThoughts,
-                            newsContext: currentNewsContext,
-                            framework: currentFramework
-                        });
-
-                        const post = await prisma.post.create({
-                            data: {
-                                userId: user.id,
-                                content,
-                                platform: "THREADS",
-                                topic: topic,
-                                status: "PENDING",
-                                clientProfileId: clientId || null,
-                            } as any,
-                        });
-
-                        generatedPosts.push({
-                            id: post.id,
-                            content: post.content,
-                            platform: post.platform!,
-                            topic: post.topic || topic,
-                        });
-                    } catch (err) {
-                        console.error(`Failed to generate Threads post for user ${user.id}:`, err);
-                    }
-                });
-            }
+            await generatePlatformPosts("THREADS", threadsCount);
         }
 
         // Execute all generation tasks for this user in parallel
