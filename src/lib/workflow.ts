@@ -214,8 +214,12 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                                 : `Client Context: ${ctx.bio} - Niche: ${ctx.niche}`;
                         }
 
+
+                        // CRITICAL: If temporaryThoughts (manual input) is present, do NOT use random topics.
+                        const useRandomTopic = !temporaryThoughts;
+
                         const { content, topic } = await generateSocialPost({
-                            topics: topicNames,
+                            topics: useRandomTopic ? topicNames : [], // Pass empty topics if manual
                             styleSample: currentStyle || undefined,
                             platform: platform as any,
                             topicAttributes: activeTopics.map((t: any) => ({

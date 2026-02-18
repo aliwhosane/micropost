@@ -26,7 +26,7 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     // Select a random topic from the string name array OR use the news context topic if available
-    let topicName = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : "General Industry Trends";
+    let topicName = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : "General";
 
     // If news context is present, we might want to infer the topic or just use "Current Events"
     // For now, we'll stick to the random topic selection unless the user specifically overrides, 
@@ -75,10 +75,10 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     const prompt = `
     You are an expert social media ghostwriter.
     Platform: ${platform}
-    ${newsContext ? `TOPIC: Trending News Story` : `Topic: ${topicName}`}
+    ${newsContext ? `TOPIC: Trending News Story` : topicName && topics.length > 0 ? `Topic: ${topicName}` : `TOPIC: User Provided Thought (See below)`}
     ${attributes?.stance ? `User's Stance/Perspective: ${attributes.stance}` : ""}
     ${attributes?.notes ? `User's Standing Notes: ${attributes.notes}` : ""}
-    ${temporaryThoughts ? `CURRENT THOUGHTS (PRIORITY OVERRIDE): "${temporaryThoughts}"` : ""}
+    ${temporaryThoughts ? `CURRENT THOUGHTS (PRIMARY INSTRUCTION): "${temporaryThoughts}"` : ""}
     ${styleSample ? `Writing Style to Mimic: ${styleSample}` : "Style: Professional, engaging, and concise."}
     ${frameworkInstruction ? `\n    STRICT FORMATTING INSTRUCTION: Use the following copywriting framework:\n${frameworkInstruction}\n` : ""}
 
