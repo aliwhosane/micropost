@@ -119,6 +119,7 @@ model Post {
   clientProfileId String?
   clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id])
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hallOfFame      Boolean        @default(false)
 }
 
 model Preferences {

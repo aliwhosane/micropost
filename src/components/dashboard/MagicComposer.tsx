@@ -92,8 +92,6 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
     };
 
     const handleGenerate = async () => {
-        if (!thoughts.trim()) return;
-
         setIsGenerating(true);
         const formData = new FormData();
         formData.append("thoughts", thoughts);
@@ -239,7 +237,7 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
                                     {/* Action Button */}
                                     <Button
                                         onClick={handleGenerate}
-                                        disabled={isGenerating || !thoughts.trim() || platforms.length === 0}
+                                        disabled={isGenerating || platforms.length === 0}
                                         className={cn(
                                             "rounded-full transition-all duration-300",
                                             isHero ? "px-8 py-6 text-lg" : ""

@@ -90,6 +90,10 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
         const limitConfig = getPlanLimits(tier);
         const maxPosts = limitConfig.postsPerDay;
 
+        // Turbo Mode Logic: Starter tier = Turbo (No Critic), Others = Deep (Critic)
+        // Also enable critic if manual run (targetUserId present) for testing quality
+        const enableCritic = tier !== "STARTER" || !!targetUserId;
+
         twitterCount = Math.min(twitterCount, maxPosts);
         linkedinCount = Math.min(linkedinCount, maxPosts);
         threadsCount = Math.min(threadsCount, maxPosts);
@@ -218,6 +222,19 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                         // CRITICAL: If temporaryThoughts (manual input) is present, do NOT use random topics.
                         const useRandomTopic = !temporaryThoughts;
 
+                        // Fetch Hall of Fame posts (Limit to 3 to save tokens)
+                        const hallOfFamePostsRaw = await prisma.post.findMany({
+                            where: {
+                                userId: user.id,
+                                hallOfFame: true,
+                                content: { not: "" }
+                            },
+                            take: 3,
+                            orderBy: { createdAt: 'desc' }, // Use most recent best posts
+                            select: { content: true }
+                        });
+                        const hallOfFamePosts = hallOfFamePostsRaw.map(p => p.content);
+
                         const { content, topic } = await generateSocialPost({
                             topics: useRandomTopic ? topicNames : [], // Pass empty topics if manual
                             styleSample: currentStyle || undefined,
@@ -229,9 +246,10 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             })),
                             temporaryThoughts: safeThoughts,
                             newsContext: currentNewsContext,
-                            framework: currentFramework
+                            framework: currentFramework,
+                            hallOfFamePosts: hallOfFamePosts,
+                            enableCritic: enableCritic
                         });
-
                         const post = await prisma.post.create({
                             data: {
                                 userId: user.id,
