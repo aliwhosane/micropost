@@ -9,6 +9,24 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 
+// --- ENV SANITIZATION ---
+// Vercel dashboard sometimes leaves literal quotes or users input raw domains (like 'domain.com' instead of 'https://domain.com').
+// This mutates these env vars on cold start so that `@auth/core`'s strict `new URL()` validations don't throw `TypeError: Invalid URL`.
+[
+    "AUTH_URL",
+    "NEXTAUTH_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_BASE_URL",
+].forEach((key) => {
+    if (process.env[key]) {
+        let val = process.env[key]!.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim();
+        if (!val.startsWith("http://") && !val.startsWith("https://")) {
+            val = `https://${val}`;
+        }
+        process.env[key] = val;
+    }
+});
+
 async function getUser(email: string) {
     try {
         const user = await prisma.user.findUnique({ where: { email } });
@@ -47,9 +65,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         Twitter({
             clientId: process.env.AUTH_TWITTER_ID?.trim(),
             clientSecret: process.env.AUTH_TWITTER_SECRET?.trim(),
-            // Request offline access to post on behalf of the user later
             authorization: {
-                url: "https://twitter.com/i/oauth2/authorize",
                 params: {
                     scope: "users.read tweet.read tweet.write offline.access media.write",
                 },
