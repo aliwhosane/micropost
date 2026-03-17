@@ -73,8 +73,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             },
             profile(profile: any) {
                 console.log("[Twitter OAuth Profile Debug]:", JSON.stringify(profile, null, 2));
-                if (profile.title === "Unauthorized" || profile.errors) {
-                    throw new Error("Twitter API Error: " + JSON.stringify(profile));
+                if (profile.title || profile.errors || profile.detail) {
+                    throw new Error(`Twitter API Error: ${profile.title || "Error"} - ${profile.detail || JSON.stringify(profile)}`);
                 }
                 const data = profile.data || {};
                 return {
