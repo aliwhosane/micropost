@@ -66,6 +66,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             clientId: process.env.AUTH_TWITTER_ID?.trim(),
             clientSecret: process.env.AUTH_TWITTER_SECRET?.trim(),
             authorization: {
+                url: "https://twitter.com/i/oauth2/authorize",
                 params: {
                     scope: "users.read tweet.read tweet.write offline.access media.write",
                 },
