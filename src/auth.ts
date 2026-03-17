@@ -71,6 +71,19 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     scope: "users.read tweet.read tweet.write offline.access media.write",
                 },
             },
+            profile(profile: any) {
+                console.log("[Twitter OAuth Profile Debug]:", JSON.stringify(profile, null, 2));
+                if (profile.title === "Unauthorized" || profile.errors) {
+                    throw new Error("Twitter API Error: " + JSON.stringify(profile));
+                }
+                const data = profile.data || {};
+                return {
+                    id: (data.id || profile.id)?.toString() || "",
+                    name: (data.name || profile.name)?.toString() || "",
+                    email: (data.email || profile.email)?.toString() || null,
+                    image: (data.profile_image_url || profile.profile_image_url)?.toString() || "",
+                };
+            }
         }),
         LinkedIn({
             clientId: process.env.AUTH_LINKEDIN_ID,
