@@ -1,42 +1,56 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { PageTitle } from "@/components/dashboard/PageTitle";
 import { UserButton } from "@/components/dashboard/UserButton";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
-import { FeatureGuard } from "@/components/dashboard/FeatureGuard";
+
+import { getSubscriptionTier } from "@/lib/subscription";
+import { ClientProvider } from "@/components/dashboard/ClientSwitcher";
+import { MobileNav } from "@/components/dashboard/MobileNav";
+import { KeyboardShortcuts } from "@/components/dashboard/KeyboardShortcuts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
 
-    // Optional: Redirect if not authenticated
-    // if (!session?.user) redirect("/login");
+    if (!session?.user) redirect("/auth");
 
     const user = session?.user?.email ? await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { subscriptionStatus: true }
+        select: {
+            subscriptionStatus: true,
+            subscriptionPlanId: true
+        }
     }) : null;
 
-    const isSubscribed = user?.subscriptionStatus === "active";
+    const tier = getSubscriptionTier(user || {});
+    const isSubscribed = tier !== "STARTER"; // Backwards compatibility for now
 
     return (
-        <div className="min-h-screen flex bg-background">
-            <Sidebar />
+        <ClientProvider user={session?.user || {}}>
+            <div className="min-h-screen flex bg-background">
+                <Sidebar />
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                <header className="h-16 border-b border-outline-variant/20 flex items-center justify-between px-6 bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-                    <h1 className="text-xl font-semibold text-on-surface">Dashboard</h1>
-                    <div className="flex items-center gap-4">
-                        <UserButton user={session?.user} />
-                    </div>
-                </header>
-                <main className="flex-1 p-6 overflow-auto">
-                    <FeatureGuard isSubscribed={isSubscribed}>
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+                    <header className="h-16 md:h-20 flex items-center justify-between px-4 md:px-8 bg-transparent sticky top-0 z-50">
+                        <div className="flex items-center gap-4">
+                            {/* Mobile Sidebar Trigger could go here */}
+                            <PageTitle />
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <UserButton user={session?.user} />
+                        </div>
+                    </header>
+                    <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto flex flex-col">
                         {children}
-                    </FeatureGuard>
-                </main>
+                    </main>
+                </div>
             </div>
-        </div>
+            <MobileNav />
+            <KeyboardShortcuts />
+        </ClientProvider>
     );
 }

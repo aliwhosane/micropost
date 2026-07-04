@@ -33,15 +33,56 @@ export async function createCustomerPortalSession() {
         select: { polarCustomerId: true }
     });
 
-    if (!user?.polarCustomerId) {
-        throw new Error("No customer ID found for user");
+    let customerId = user?.polarCustomerId;
+
+    // Helper to validate UUID
+    const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    // If ID is missing or invalid (e.g. legacy/dummy ID), try to fetch correct UUID from Polar
+    if (!customerId || !isUuid(customerId)) {
+        try {
+            console.log(`[Polar Action] Invalid or missing Customer ID (${customerId}). Looking up by email: ${session.user.email}`);
+
+            // List customers by email
+            const customers = await polar.customers.list({
+                email: session.user.email,
+                limit: 1,
+            });
+
+            if (customers.result.items.length > 0) {
+                customerId = customers.result.items[0].id;
+                console.log(`[Polar Action] Found correct Customer UUID: ${customerId}`);
+
+                // Update database with correct UUID to prevent future lookups
+                await prisma.user.update({
+                    where: { email: session.user.email },
+                    data: { polarCustomerId: customerId }
+                });
+            } else {
+                console.error(`[Polar Action] No customer found in Polar for email: ${session.user.email}`);
+            }
+        } catch (error) {
+            console.error("[Polar Action] Failed to lookup user by email:", error);
+        }
     }
 
-    const result = await polar.customerSessions.create({
-        customerId: user.polarCustomerId,
-    });
+    if (!customerId) {
+        // If we still don't have an ID, we can't create a session.
+        // Redirect to settings with error or maybe they just aren't a customer yet?
+        console.error("[Polar Action] Could not resolve a valid Polar Customer ID.");
+        redirect("/dashboard/settings?error=customer_not_found");
+    }
 
-    if (result) {
-        redirect(result.customerPortalUrl);
+    try {
+        const result = await polar.customerSessions.create({
+            customerId: customerId,
+        });
+
+        if (result) {
+            redirect(result.customerPortalUrl);
+        }
+    } catch (error: any) {
+        console.error("[Polar Action] Failed to create customer session:", error?.message || error);
+        redirect("/dashboard/settings?error=portal_error");
     }
 }

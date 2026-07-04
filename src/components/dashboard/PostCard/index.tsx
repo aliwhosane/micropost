@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { LivePreview } from "./LivePreview";
 import { useRouter } from "next/navigation";
-import { Download, X } from "lucide-react";
+import { Download, X, ImagePlus, Upload } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { approvePost, rejectPost, updatePostContent, regeneratePostAction } from "@/lib/actions";
+import { ContentUnfold } from "@/components/ui/ContentUnfold";
+import { triggerUndoToast } from "@/components/ui/UndoToast";
 import { usePostSelection } from "@/hooks/usePostSelection";
 import { usePostScheduling } from "@/hooks/usePostScheduling";
 import { PostCardHeader } from "./PostCardHeader";
@@ -13,6 +17,8 @@ import { SchedulingPopover } from "./SchedulingPopover";
 import { CharacterCount } from "./CharacterCount";
 import { VisionSelector } from "../VisionCraft/VisionSelector";
 import { savePostImageAction } from "@/app/actions/image";
+import { uploadImageAction } from "@/app/actions/upload";
+import { toast } from "sonner";
 
 
 interface PostCardProps {
@@ -35,11 +41,15 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     const [instruction, setInstruction] = useState("");
     const [showVisionSelector, setShowVisionSelector] = useState(false);
     const [isCompact, setIsCompact] = useState(false); // Default to expanded for now, could be prop controlled later
+    const [isUnfolding, setIsUnfolding] = useState(false);
+    const [pendingRegenerate, setPendingRegenerate] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
 
     // Refs
     const cardRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const schedulePopoverRef = useRef<HTMLDivElement>(null);
 
     // Custom Hooks
@@ -65,6 +75,15 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         }
     }, [isEditing, editedContent]);
 
+    // Detect content prop change after regeneration to trigger unfold animation
+    useEffect(() => {
+        if (pendingRegenerate) {
+            setEditedContent(content);
+            setIsUnfolding(true);
+            setPendingRegenerate(false);
+        }
+    }, [content, pendingRegenerate]);
+
     // Close scheduling popover on outside click
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -76,25 +95,56 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
         return () => window.removeEventListener("mousedown", handleClickOutside);
     }, [isScheduling]);
 
-    const handleRegenerate = async () => {
-        if (!selection || !instruction.trim()) return;
+    const handleRegenerate = async (instructionOverride?: string) => {
+        const inst = instructionOverride || instruction || "Refine this post";
+        if (!selection || !inst.trim()) return;
         setActionStatus("REGENERATING");
-        await regeneratePostAction(id, selection.text, instruction);
-        setActionStatus("IDLE");
-        setSelection(null);
-        setInstruction("");
+        try {
+            await regeneratePostAction(id, selection.text, inst);
+            toast.success("Post refined successfully");
+            setSelection(null);
+            setInstruction("");
+            setPendingRegenerate(true); // flag so we can trigger unfold when content prop updates
+            router.refresh();
+        } catch (error) {
+            toast.error("Failed to regenerate. Please try again.");
+        } finally {
+            setActionStatus("IDLE");
+        }
     };
 
     const handleApprove = async () => {
         setActionStatus("APPROVING");
-        await approvePost(id);
-        setActionStatus("IDLE");
+        try {
+            await approvePost(id);
+            toast.success("Post approved & publishing...");
+            router.refresh();
+        } catch (error) {
+            toast.error("Failed to approve. Please try again.");
+        } finally {
+            setActionStatus("IDLE");
+        }
     };
 
-    const handleReject = async () => {
+    const handleReject = () => {
         setActionStatus("REJECTING");
-        await rejectPost(id);
-        setActionStatus("IDLE");
+
+        triggerUndoToast({
+            message: "Post dismissed.",
+            onUndo: () => {
+                setActionStatus("IDLE");
+                toast.success("Post restored");
+            },
+            onConfirm: async () => {
+                try {
+                    await rejectPost(id);
+                    router.refresh();
+                } catch (error) {
+                    setActionStatus("IDLE");
+                    toast.error("Failed to dismiss post. Please try again.");
+                }
+            },
+        });
     };
 
     const handleSave = async () => {
@@ -103,14 +153,25 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             return;
         }
         setActionStatus("SAVING");
-        await updatePostContent(id, editedContent);
-        setActionStatus("IDLE");
-        setIsEditing(false);
+        try {
+            await updatePostContent(id, editedContent);
+            toast.success("Changes saved");
+            setIsEditing(false);
+            router.refresh();
+        } catch (error) {
+            toast.error("Failed to save. Please try again.");
+        } finally {
+            setActionStatus("IDLE");
+        }
     };
 
     const handleCancel = () => {
         setEditedContent(content);
         setIsEditing(false);
+    };
+
+    const handleRepurpose = () => {
+        router.push(`/dashboard/shortsmaker?source_post_id=${id}`);
     };
 
     const handleDownload = () => {
@@ -136,10 +197,23 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
     return (
         <div
             ref={cardRef}
-            className={`relative flex flex-col rounded-xl border transition-all duration-300 group
-                ${isCompact ? "p-3 gap-2" : "p-5 gap-4"}
-                bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 shadow-sm hover:shadow-lg
+            className={`relative flex flex-col rounded-[2rem] border transition-all duration-300 group/card cursor-pointer
+                ${isCompact ? "p-4 gap-3" : "p-6 gap-5"}
+                bg-surface border-outline-variant/10 shadow-sm 
+                hover:shadow-md hover:border-primary/20 hover:bg-surface-variant/10
+                ${actionStatus === "REJECTING" ? "opacity-40 pointer-events-none" : ""}
             `}
+            onClick={(e) => {
+                // Prevent toggling if selecting text or clicking interactive elements
+                if (window.getSelection()?.toString().length) return;
+                // If isCompact is true, clicking anywhere expands it.
+                // If expanded, clicking non-interactive areas could collapse it? 
+                // Let's stick to "Click to expand" primarily. 
+                // User can use the chevron to collapse.
+                if (isCompact) {
+                    setIsCompact(false);
+                }
+            }}
         >
 
             {/* Selection Popover */}
@@ -192,6 +266,21 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                         disabled={actionStatus === "SAVING"}
                         rows={1}
                     />
+                ) : isUnfolding ? (
+                    <div
+                        ref={contentRef}
+                        className={`font-medium text-on-surface text-[15px] leading-7 p-1 transition-all
+                            ${isCompact ? "line-clamp-2 text-sm leading-snug text-on-surface/80" : ""}
+                        `}
+                    >
+                        <ContentUnfold
+                            content={editedContent}
+                            speed={80}
+                            onComplete={() => setIsUnfolding(false)}
+                            as="span"
+                            className="text-on-surface leading-relaxed"
+                        />
+                    </div>
                 ) : (
                     <div
                         ref={contentRef}
@@ -229,21 +318,71 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
             {/* VisionCraft / Image Attachment */}
             {/* Show selector if no image and status is pending/draft/failed */}
             {!isCompact && !imageUrl && (initialStatus === "PENDING" || initialStatus === "DRAFT" || initialStatus === "FAILED") && !isEditing && (
-                <div className="pt-2 border-t border-white/5">
+                <div className="pt-2 border-t border-outline-variant/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-in-out">
                     {!showVisionSelector ? (
-                        <button
-                            onClick={() => setShowVisionSelector(true)}
-                            className="flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors px-2 py-1.5 rounded-md hover:bg-white/5 w-full"
-                        >
-                            <span className="text-lg">✨</span>
-                            <span>Add Visual</span>
-                        </button>
+                        <div className="flex items-center gap-2 mt-1 w-full">
+                            <Button
+                                variant="outlined"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowVisionSelector(true);
+                                }}
+                                className="flex-1 border-dashed border-outline-variant/40 hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant hover:text-primary h-12"
+                            >
+                                <ImagePlus className="w-4 h-4 mr-2" />
+                                Add Visual
+                            </Button>
+
+                            {/* Custom Upload */}
+                            <Button
+                                variant="outlined"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    fileInputRef.current?.click();
+                                }}
+                                className="flex-1 border-dashed border-outline-variant/40 hover:border-primary/50 hover:bg-primary/5 text-on-surface-variant hover:text-primary h-12"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Image
+                            </Button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onClick={(e) => e.stopPropagation()} // Stop click propagation for input too
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    const formData = new FormData();
+                                    formData.append("file", file);
+
+                                    toast.promise(
+                                        uploadImageAction(formData).then(async (res) => {
+                                            if (res.success && res.url) {
+                                                setImageUrl(res.url);
+                                                await savePostImageAction(id, res.url);
+                                                router.refresh();
+                                                return "Image uploaded!";
+                                            }
+                                            throw new Error(res.error);
+                                        }),
+                                        {
+                                            loading: 'Uploading...',
+                                            success: 'Image uploaded!',
+                                            error: 'Upload failed'
+                                        }
+                                    );
+                                }}
+                            />
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => setShowVisionSelector(false)}
-                                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                                    className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
                                 >
                                     Close VisionCraft
                                 </button>
@@ -300,31 +439,45 @@ export function PostCard({ id, content, platform, topic, createdAt, status: init
                 </div>
             )}
 
-            {/* Footer Actions */}
-            {isScheduling && (
-                <SchedulingPopover
-                    ref={schedulePopoverRef}
-                    scheduleDate={scheduleDate}
-                    isScheduling={isSchedulingSubmitting}
-                    onClose={() => setIsScheduling(false)}
-                    onConfirm={() => handleConfirmSchedule(id)}
-                    onDateChange={setScheduleDate}
+            {/* Live Preview */}
+            {!isCompact && (
+                <LivePreview
+                    content={isEditing ? editedContent : content}
+                    platform={platform}
+                    imageUrl={imageUrl}
+                    isOpen={showPreview}
+                    onToggle={() => setShowPreview(!showPreview)}
                 />
             )}
 
-            <PostCardActions
-                status={initialStatus}
-                isEditing={isEditing}
-                actionStatus={actionStatus}
-                scheduledFor={scheduledFor}
-                onEdit={() => setIsEditing(true)}
-                onCancel={handleCancel}
-                onSave={handleSave}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onToggleSchedule={() => setIsScheduling(!isScheduling)}
-                isValid={isValid}
-            />
+            {/* Footer Actions */}
+            <div className="relative w-fit">
+                {isScheduling && (
+                    <SchedulingPopover
+                        ref={schedulePopoverRef}
+                        scheduleDate={scheduleDate}
+                        isScheduling={isSchedulingSubmitting}
+                        onClose={() => setIsScheduling(false)}
+                        onConfirm={() => handleConfirmSchedule(id)}
+                        onDateChange={setScheduleDate}
+                    />
+                )}
+
+                <PostCardActions
+                    status={initialStatus}
+                    isEditing={isEditing}
+                    actionStatus={actionStatus}
+                    scheduledFor={scheduledFor}
+                    onEdit={() => setIsEditing(true)}
+                    onCancel={handleCancel}
+                    onSave={handleSave}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    onToggleSchedule={() => setIsScheduling(!isScheduling)}
+                    onRepurpose={handleRepurpose}
+                    isValid={isValid}
+                />
+            </div>
         </div>
     );
 }

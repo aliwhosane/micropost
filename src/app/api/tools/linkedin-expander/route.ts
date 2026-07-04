@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,30 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        variations: {
+                            type: SchemaType.ARRAY,
+                            description: "Three LinkedIn post variations in different formats",
+                            items: {
+                                type: SchemaType.OBJECT,
+                                properties: {
+                                    type: { type: SchemaType.STRING, description: "Format type: Story, Actionable Advice, or Analytical" },
+                                    content: { type: SchemaType.STRING, description: "The full LinkedIn post content" },
+                                },
+                                required: ["type", "content"],
+                            },
+                        },
+                    },
+                    required: ["variations"],
+                },
+            },
+        });
 
         const prompt = `
             You are a master LinkedIn content creator who knows how to go viral.
@@ -36,34 +60,12 @@ export async function POST(req: Request) {
             - Include strong hooks and clear takeaways.
             - Add a question at the end to drive engagement.
             - Identify and use the top 2-4 most popular and relevant hashtags for this topic. Avoid generic tags; prefer high-traffic niche tags.
-            
-            Return the response in strict JSON format with this structure:
-            {
-                "variations": [
-                    {
-                        "type": "Story",
-                        "content": "..."
-                    },
-                    {
-                        "type": "Actionable Advice",
-                        "content": "..."
-                    },
-                    {
-                        "type": "Analytical",
-                        "content": "..."
-                    }
-                ]
-            }
-            
-            Do not include markdown code blocks. Just return the raw JSON string.
         `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
 
     } catch (error) {
         console.error("LinkedIn expansion error:", error);

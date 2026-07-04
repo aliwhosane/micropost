@@ -25,14 +25,14 @@ export function AddTopicForm() {
                     <Input
                         name="topic"
                         placeholder="e.g. 'React Server Components', 'SaaS Marketing'"
-                        className="bg-surface border-outline-variant focus:border-primary"
+                        className="focus:border-primary"
                         required
                     />
                 </div>
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-on-surface">Stance</label>
                     <Select value={stance} onValueChange={setStance}>
-                        <SelectTrigger className="bg-surface border-outline-variant">
+                        <SelectTrigger>
                             <SelectValue placeholder="Select a stance" />
                         </SelectTrigger>
                         <SelectContent>
@@ -52,7 +52,7 @@ export function AddTopicForm() {
                 <Textarea
                     name="notes"
                     placeholder="Add any specific thoughts, angles, or instructions for this topic..."
-                    className="bg-surface border-outline-variant focus:border-primary min-h-[80px]"
+                    className="focus:border-primary min-h-[80px]"
                 />
             </div>
 

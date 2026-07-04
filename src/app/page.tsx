@@ -16,7 +16,7 @@ export default function Home() {
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": siteConfig.description,
+    "description": "Free AI Social Media Generator. Create viral LinkedIn and Twitter posts efficiently.",
     "featureList": "AI Content Generation, Viral Frameworks (PAS, AIDA), AI Image Generation, Threads Scheduling, Social Media Scheduling, Post Analytics, Bio Optimization",
   };
 
@@ -50,7 +50,13 @@ export default function Home() {
       {/* Navbar */}
       <Navbar />
 
-      <LandingPageContent />
+      <LandingPageContent
+        productIds={{
+          pro: process.env.POLAR_PRODUCT_ID_PRO || "",
+          agencyMonthly: process.env.POLAR_PRODUCT_ID_AGENCY_MONTHLY || "",
+          agencyYearly: process.env.POLAR_PRODUCT_ID_AGENCY_YEARLY || ""
+        }}
+      />
 
       <Footer />
     </div>

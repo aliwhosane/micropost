@@ -1,6 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { YouTubeTranscriptApi } from "yt-transcript-api";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -51,7 +52,25 @@ export async function POST(req: Request) {
 
         // 3. Generate Thread with Gemini
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        thread: {
+                            type: SchemaType.ARRAY,
+                            description: "Array of tweet strings forming the thread",
+                            items: {
+                                type: SchemaType.STRING,
+                            },
+                        },
+                    },
+                    required: ["thread"],
+                },
+            },
+        });
 
         const prompt = `
       You are a viral social media ghostwriter.
@@ -63,27 +82,12 @@ export async function POST(req: Request) {
       
       Transcript:
       "${transcriptText}"
-
-      Return the response in strict JSON format with this structure:
-      {
-        "thread": [
-          "Tweet 1...",
-          "Tweet 2...",
-          "Tweet 3..."
-        ]
-      }
-      
-      Do not include markdown code blocks (like \`\`\`json). Just return the raw JSON string.
     `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const text = response.text();
 
-        // Clean up potential markdown formatting
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
     } catch (error) {
         console.error("YouTube summarization error:", error);
         return NextResponse.json({ error: "Failed to generate thread" }, { status: 500 });

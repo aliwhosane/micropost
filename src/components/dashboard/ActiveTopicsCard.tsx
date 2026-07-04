@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Hash, Sparkles, ThumbsUp, ThumbsDown, Scale, HelpCircle, Save, X } from "lucide-react";
@@ -91,16 +92,16 @@ function TopicItem({
 
     if (isEditing) {
         return (
-            <div className="p-4 rounded-xl bg-surface-variant/30 border border-primary/20 space-y-3">
+            <div className="p-4 rounded-3xl bg-surface-variant/30 border border-primary/20 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-on-surface">{topic.name}</span>
-                    <Button size="sm" variant="text" onClick={onCancel} disabled={isSaving}>
+                    <span className="font-bold text-on-surface text-lg">{topic.name}</span>
+                    <Button size="icon" variant="ghost" onClick={onCancel} disabled={isSaving} className="h-8 w-8 rounded-full">
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Your Stance</label>
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Your Stance</label>
                     <div className="flex gap-2">
                         <StanceButton current={stance} value="PRO" onClick={setStance} icon={ThumbsUp} label="Pro" />
                         <StanceButton current={stance} value="ANTI" onClick={setStance} icon={ThumbsDown} label="Critic" />
@@ -109,17 +110,17 @@ function TopicItem({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Standing Notes</label>
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Standing Notes</label>
                     <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="E.g. Focus on technical details..."
-                        className="bg-surface text-sm"
+                        className="bg-surface text-sm rounded-2xl border-outline-variant/20 focus:border-primary/50 text-base"
                     />
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                    <Button size="sm" onClick={handleSave} disabled={isSaving} className="rounded-full px-6">
                         {isSaving ? "Saving..." : <><Save className="mr-2 h-3 w-3" /> Save Changes</>}
                     </Button>
                 </div>
@@ -130,26 +131,26 @@ function TopicItem({
     return (
         <div
             onClick={onEdit}
-            className="group flex flex-col p-3 rounded-xl bg-surface-variant/30 border border-transparent hover:border-outline-variant hover:bg-surface-variant/50 transition-all cursor-pointer"
+            className="group flex flex-col p-4 rounded-3xl bg-surface hover:bg-surface-variant/30 border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer shadow-sm hover:shadow-md"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${getStanceColor(topic.stance)}`}>
+                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110", getStanceColor(topic.stance))}>
                         {getStanceIcon(topic.stance)}
                     </div>
                     <div>
-                        <span className="font-medium text-on-surface group-hover:text-primary transition-colors">{topic.name}</span>
+                        <span className="font-bold text-on-surface group-hover:text-primary transition-colors text-base">{topic.name}</span>
                         {topic.stance && topic.stance !== "NEUTRAL" && (
-                            <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant uppercase">{topic.stance}</span>
+                            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-bold uppercase tracking-wider">{topic.stance}</span>
                         )}
                     </div>
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-primary font-medium">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-primary font-bold bg-primary/10 px-3 py-1 rounded-full">
                     Edit
                 </div>
             </div>
             {topic.notes && (
-                <p className="mt-2 text-xs text-on-surface-variant line-clamp-2 pl-11 border-l-2 border-outline-variant ml-4">
+                <p className="mt-3 text-sm text-on-surface-variant line-clamp-2 pl-4 border-l-2 border-primary/20 ml-5 font-medium opacity-80">
                     {topic.notes}
                 </p>
             )}

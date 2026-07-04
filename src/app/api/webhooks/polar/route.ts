@@ -1,4 +1,4 @@
-import { Webhook } from "svix";
+import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 
@@ -12,40 +12,36 @@ export async function POST(req: Request) {
     }
 
     const headerPayload = await headers();
-    const svix_id = headerPayload.get("webhook-id");
-    const svix_timestamp = headerPayload.get("webhook-timestamp");
-    const svix_signature = headerPayload.get("webhook-signature");
-
-    if (!svix_id || !svix_timestamp || !svix_signature) {
-        return new Response("Error occured -- no svix headers", {
-            status: 400,
-        });
-    }
-
-    const payload = await req.json();
-    const body = JSON.stringify(payload);
-
-    const wh = new Webhook(WEBHOOK_SECRET);
+    const headersObject = Object.fromEntries(headerPayload.entries());
+    const body = await req.text();
     let evt: any;
 
     try {
-        evt = wh.verify(body, {
-            "webhook-id": svix_id,
-            "webhook-timestamp": svix_timestamp,
-            "webhook-signature": svix_signature,
-        });
-    } catch (err) {
-        return new Response("Error occured", {
+        evt = validateEvent(body, headersObject, WEBHOOK_SECRET);
+    } catch (err: any) {
+        console.error("Webhook verification failed:", err.message);
+        if (err instanceof WebhookVerificationError) {
+            return new Response("Webhook Verification Error", { status: 403 });
+        }
+        return new Response(`Error occured: ${err.message}`, {
             status: 400,
         });
     }
 
     const eventType = evt.type;
 
+    if (eventType.startsWith("customer.")) {
+        console.log(`[Polar Webhook] Ignoring customer event: ${eventType}`);
+        return new Response("", { status: 200 });
+    }
+
     // Filter by product ID to avoid processing events from other products
     const ALLOWED_PRODUCT_IDS = [
-        "585a7590-d6dc-4bd5-b2ce-df7d29ae57ce", // Monthly Membership
-        "6f0dcd25-6b07-4cac-bb10-151b03435bbb", // Lifetime Access
+        "585a7590-d6dc-4bd5-b2ce-df7d29ae57ce", // Monthly Membership (Legacy)
+        "6f0dcd25-6b07-4cac-bb10-151b03435bbb", // Lifetime Access (Legacy)
+        "4b84edf0-398b-4c9b-994c-d3bdc43a2475", // Pro Monthly
+        "a4bf3289-c763-4802-ba72-77088853a8ca", // Agency Monthly
+        "6cb36d94-9acc-444b-8756-b725a2da4550", // Agency Yearly
     ];
 
     const data = evt.data as any;
@@ -59,23 +55,39 @@ export async function POST(req: Request) {
 
     if (eventType === "subscription.created" || eventType === "subscription.updated") {
         const subscription = evt.data;
-        const email = subscription.user.email; // Verify where email is located in payload
-        // If email is not directly on user, we might need to fetch user or rely on customer_id
+        // Verify where email is located in payload - user or customer
+        console.log(`[Polar Webhook] Subscription keys: ${Object.keys(subscription).join(', ')}`);
+        const email = subscription.user?.email || subscription.customer?.email;
 
         // Check if we have a user with this email
         // Note: Polar payload structure: data: { user: { email: ... }, ... } or similar.
         // We should safely access it.
 
         if (email) {
-            await prisma.user.update({
-                where: { email },
-                data: {
-                    polarSubscriptionId: subscription.id,
-                    polarCustomerId: subscription.user_id || subscription.customer_id, // Adjust based on actual payload
-                    subscriptionStatus: subscription.status,
-                    subscriptionPlanId: subscription.product_id,
+            if (email) {
+                try {
+                    const user = await prisma.user.findUnique({ where: { email } });
+
+                    if (user) {
+                        await prisma.user.update({
+                            where: { email },
+                            data: {
+                                polarSubscriptionId: subscription.id,
+                                polarCustomerId: subscription.user_id || subscription.customer_id,
+                                subscriptionStatus: subscription.status,
+                                subscriptionPlanId: subscription.product_id,
+                            }
+                        });
+                        console.log(`[Polar Webhook] Updated subscription for user: ${email}`);
+                    } else {
+                        console.warn(`[Polar Webhook] User not found for email: ${email}. Skipping update.`);
+                    }
+                } catch (dbError: any) {
+                    console.error(`[Polar Webhook] Database error updating user ${email}:`, dbError.message);
+                    // Return 500 to retry if it's a transient DB error, or 200 if logic error? 
+                    // Usually safer to return 200 if we can't fix it, but let's stick to logging and returning 200 to stop retries if logic failed.
                 }
-            });
+            }
         }
     }
 
@@ -119,6 +131,10 @@ export async function POST(req: Request) {
             });
         }
     }
+
+    // ... existing event handlers ...
+
+
 
     return new Response("", { status: 200 });
 }

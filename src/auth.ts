@@ -4,9 +4,28 @@ import { prisma } from "@/lib/db";
 import Credentials from "next-auth/providers/credentials";
 import Twitter from "next-auth/providers/twitter";
 import LinkedIn from "next-auth/providers/linkedin";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
+
+// --- ENV SANITIZATION ---
+// Vercel dashboard sometimes leaves literal quotes or users input raw domains (like 'domain.com' instead of 'https://domain.com').
+// This mutates these env vars on cold start so that `@auth/core`'s strict `new URL()` validations don't throw `TypeError: Invalid URL`.
+[
+    "AUTH_URL",
+    "NEXTAUTH_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_BASE_URL",
+].forEach((key) => {
+    if (process.env[key]) {
+        let val = process.env[key]!.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim();
+        if (!val.startsWith("http://") && !val.startsWith("https://")) {
+            val = `https://${val}`;
+        }
+        process.env[key] = val;
+    }
+});
 
 async function getUser(email: string) {
     try {
@@ -46,13 +65,25 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         Twitter({
             clientId: process.env.AUTH_TWITTER_ID?.trim(),
             clientSecret: process.env.AUTH_TWITTER_SECRET?.trim(),
-            // Request offline access to post on behalf of the user later
             authorization: {
                 url: "https://twitter.com/i/oauth2/authorize",
                 params: {
-                    scope: "users.read tweet.read tweet.write offline.access",
+                    scope: "users.read tweet.read tweet.write offline.access media.write",
                 },
             },
+            profile(profile: any) {
+                console.log("[Twitter OAuth Profile Debug]:", JSON.stringify(profile, null, 2));
+                if (profile.title || profile.errors || profile.detail) {
+                    throw new Error(`Twitter API Error: ${profile.title || "Error"} - ${profile.detail || JSON.stringify(profile)}`);
+                }
+                const data = profile.data || {};
+                return {
+                    id: (data.id || profile.id)?.toString() || "",
+                    name: (data.name || profile.name)?.toString() || "",
+                    email: (data.email || profile.email)?.toString() || null,
+                    image: (data.profile_image_url || profile.profile_image_url)?.toString() || "",
+                };
+            }
         }),
         LinkedIn({
             clientId: process.env.AUTH_LINKEDIN_ID,
@@ -62,6 +93,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     scope: "openid profile email w_member_social",
                 },
             },
+        }),
+        Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
         }),
         {
             id: "threads",
@@ -75,7 +110,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 },
             },
             token: {
-                url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL}/api/auth/threads/token`,
+                url: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://micropost-ai.com"}/api/auth/threads/token`,
             },
             client: {
                 token_endpoint_auth_method: "client_secret_post",
@@ -118,4 +153,50 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             return true;
         },
     },
+    events: {
+        async linkAccount({ user, account, profile }) {
+            try {
+                // 1. Capture Metadata
+                const p = profile as any;
+                let accountName = p.name || p.username || p.login; // GitHub uses login
+                let accountImage = p.image || p.picture || p.avatar_url;
+
+                // Provider specific mapping if needed
+                if (account.provider === "linkedin") {
+                    // LinkedIn profile structure might vary, but 'name' and 'picture' are standard OIDC
+                }
+
+                // 2. Check for Client Context cookie
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const clientId = cookieStore.get("micropost_connecting_client_id")?.value;
+
+                // 3. Update the Account record
+                // We use any cast for data because Prisma types might lag behind schema updates in IDE
+                await prisma.account.update({
+                    where: {
+                        provider_providerAccountId: {
+                            provider: account.provider,
+                            providerAccountId: account.providerAccountId
+                        }
+                    },
+                    data: {
+                        accountName: accountName,
+                        accountImage: accountImage,
+                        clientProfileId: clientId || null
+                    } as any
+                });
+
+                console.log(`Linked ${account.provider} account for user ${user.id}. Client: ${clientId || "Personal"}`);
+
+                // Clear the cookie
+                if (clientId) {
+                    cookieStore.delete("micropost_connecting_client_id");
+                }
+
+            } catch (error) {
+                console.error("Error in linkAccount event:", error);
+            }
+        }
+    }
 });

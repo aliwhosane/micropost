@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
  * Generates speech from text using Gemini 2.5 Flash TTS.
  * Returns a Base64 string of the audio (WAV/Linear16).
  */
-export async function generateSpeech(text: string): Promise<string> {
+export async function generateSpeech(text: string, voiceName: string = "Kore"): Promise<string> {
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
@@ -15,7 +15,7 @@ export async function generateSpeech(text: string): Promise<string> {
                 responseModalities: ['AUDIO'],
                 speechConfig: {
                     voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: 'Kore' }, // 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'
+                        prebuiltVoiceConfig: { voiceName: voiceName }, // 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'
                     },
                 },
             },

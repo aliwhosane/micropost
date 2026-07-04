@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,23 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.ANALYTICAL,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        bios: {
+                            type: SchemaType.ARRAY,
+                            items: { type: SchemaType.STRING, description: "A bio option" },
+                            description: "Array of 5 bio options",
+                        },
+                    },
+                    required: ["bios"],
+                },
+            },
+        });
 
         const prompt = `
             You are an expert personal branding consultant and social media strategist.
@@ -38,26 +55,13 @@ export async function POST(req: Request) {
             ${platform === 'LinkedIn' ? '- Professional but engaging tone.\n- Focus on value proposition.\n- Can be up to 3-4 lines.' : ''}
             ${platform === 'Instagram' ? '- Use line breaks.\n- Use emojis effectively.\n- Focus on personality and aesthetic.' : ''}
             
-            Return the response in strict JSON format with this structure:
-            {
-                "bios": [
-                    "Bio option 1...",
-                    "Bio option 2...",
-                    "Bio option 3...",
-                    "Bio option 4...",
-                    "Bio option 5..."
-                ]
-            }
-            
-            Do not include markdown code blocks. Just return the raw JSON string.
+            Return 5 bio options in the "bios" array.
         `;
 
         const result = await model.generateContent(prompt);
-        const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const data = JSON.parse(result.response.text());
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(data);
 
     } catch (error) {
         console.error("Bio generation error:", error);

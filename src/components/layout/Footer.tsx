@@ -8,7 +8,7 @@ export function Footer() {
                 <div className="flex flex-col items-start gap-4">
                     <div className="flex items-center gap-2">
                         <BrandLogo size="md" />
-                        <span className="text-sm text-on-surface-variant">© 2026 Micropost AI</span>
+                        <span className="text-sm text-on-surface-variant">© 2026 micropost-ai.com</span>
                     </div>
                     <p className="text-xs text-on-surface-variant max-w-xs">
                         The AI social media ghostwriter that helps you grow on Twitter and LinkedIn with zero effort.
@@ -29,7 +29,7 @@ export function Footer() {
                     <div className="flex flex-col gap-3">
                         <span className="font-semibold text-on-surface">Connect</span>
                         <a href="https://twitter.com/micropostai" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Twitter / X</a>
-                        <a href="mailto:support@micropost.ai" className="hover:text-primary transition-colors">Support</a>
+                        <a href="mailto:support@micropost-ai.com" className="hover:text-primary transition-colors">Support</a>
                     </div>
                 </nav>
             </div>

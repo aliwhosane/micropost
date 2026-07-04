@@ -44,7 +44,7 @@ export function PricingCard({ name, price, description, features, buttonText, pr
 
                 {isActive && (
                     <div className="absolute top-0 right-0 p-0 z-10">
-                        <div className="bg-green-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1 uppercase tracking-wider">
+                        <div className="bg-secondary text-on-secondary text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1 uppercase tracking-wider">
                             <Check className="w-3 h-3" strokeWidth={3} /> Current Plan
                         </div>
                     </div>

@@ -1,0 +1,18 @@
+# Micropost AI
+
+Micropost AI is an AI-powered social media ghostwriter that helps users grow on Twitter and LinkedIn.
+
+## Core Features
+- **AI Content Generation:** Generates posts based on user voice and topics.
+- **Scheduling:** Automates posting to Twitter, LinkedIn, and Threads.
+- **Studio:** Creates visual assets (social cards, vertical videos).
+- **Tools:** Suite of mini-tools for repurposing content (e.g., YouTube Summarizer, Tweet to LinkedIn).
+
+## Key Links
+- Home: https://micropost-ai.com
+- Pricing: https://micropost-ai.com/pricing
+- Login: https://micropost-ai.com/login
+- API Docs: https://micropost-ai.com/docs (if available)
+
+## Contact
+- Support: support@micropost-ai.com
