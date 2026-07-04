@@ -1,7 +1,16 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 // Lazy initialization helper
 const getGenAI = () => new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
+// --- CENTRALIZED MODEL CONSTANTS ---
+// Updated July 2026 from https://ai.google.dev/gemini-api/docs/pricing
+export const MODELS = {
+    CREATIVE: "gemini-3.5-flash",             // Best creativity (Stable, $1.50/$9.00 per 1M tokens)
+    ANALYTICAL: "gemini-2.5-flash",            // Best price-performance ($0.30/$2.50 per 1M tokens)
+    IMAGE: "gemini-3-pro-image",               // Native image generation
+    TTS: "gemini-2.5-flash-preview-tts",       // Text-to-speech
+} as const;
 
 interface GeneratePostParams {
     topics: string[];
@@ -30,7 +39,21 @@ interface GeneratePostParams {
 // 1. THE BRIDGE AGENT (Connects News/Topic to User Niche)
 // 1. THE BRIDGE AGENT (Connects News/Topic to User Niche)
 export async function generateBridgeAngle(topic: string, niche: string, newsContext?: any): Promise<string> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    score: { type: SchemaType.NUMBER, description: "Relevance score 0-100 between niche and topic" },
+                    angle: { type: SchemaType.STRING, description: "The generated angle for the post" },
+                    reasoning: { type: SchemaType.STRING, description: "Brief explanation of the score" }
+                },
+                required: ["score", "angle", "reasoning"]
+            }
+        }
+    });
 
     const prompt = `
     You are a Strategic Social Media Editor.
@@ -47,19 +70,11 @@ export async function generateBridgeAngle(topic: string, niche: string, newsCont
        - 0: No connection (e.g. Knitting patterns for a Fintech CEO).
     3. If Score < 70 and News is present: IGNORE the news. Generate a generic, evergreen angle for the Topic instead.
     4. If Score >= 70: Generate a specific angle connecting the News to the Niche.
-    
-    Output JSON ONLY:
-    {
-        "score": number,
-        "angle": "The generated angle string",
-        "reasoning": "Why this score?"
-    }
     `;
 
     try {
         const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        const data = JSON.parse(text);
+        const data = JSON.parse(result.response.text());
 
         if (!data.angle) throw new Error("No angle returned from Bridge");
 
@@ -67,9 +82,6 @@ export async function generateBridgeAngle(topic: string, niche: string, newsCont
 
         if (newsContext && data.score < 70) {
             console.log(`[Bridge] Connection too weak (${data.score}). Falling back to generic angle.`);
-            // fallback handled by the prompt logic itself (step 3), but we accept the output 'angle'
-            // which should be the generic one as requested.
-            return data.angle;
         }
 
         return data.angle;
@@ -81,7 +93,20 @@ export async function generateBridgeAngle(topic: string, niche: string, newsCont
 
 // 2. THE CRITIC AGENT (Quality Control)
 export async function critiquePost(draft: string, platform: string, topic: string): Promise<{ score: number, feedback: string }> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    score: { type: SchemaType.NUMBER, description: "Quality score 0-100 based on viral potential" },
+                    feedback: { type: SchemaType.STRING, description: "Specific instructions on how to fix the post" }
+                },
+                required: ["score", "feedback"]
+            }
+        }
+    });
 
     const prompt = `
     You are a Brutal Social Media Critic.
@@ -98,27 +123,20 @@ export async function critiquePost(draft: string, platform: string, topic: strin
       2. The Fluff: Are there wasted words? (e.g. "In today's fast paced world") -> Delete.
       3. The Clichés: Does it use words like "Unlock", "Unleash", "Game-changer"? -> -10 points.
       4. Formatting: Is it a wall of text?
-      
-    Output JSON ONLY:
-    {
-        "score": number,
-        "feedback": "Specific instructions on how to fix it. Be direct."
-    }
     `;
 
     try {
         const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(text);
+        return JSON.parse(result.response.text());
     } catch (e) {
         console.error("Critic Agent Failed:", e);
-        return { score: 100, feedback: "" }; // Assume perfection if critic fails
+        return { score: 70, feedback: "Critic unavailable — review recommended" };
     }
 }
 
 // 3. THE REFINER AGENT (Polishing)
 export async function refinePost(draft: string, feedback: string, platform: string): Promise<string> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({ model: MODELS.CREATIVE });
 
     const prompt = `
     You are an Expert Copyeditor.
@@ -150,9 +168,19 @@ export async function refinePost(draft: string, feedback: string, platform: stri
 }
 
 
-export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts, newsContext, framework, hallOfFamePosts, enableCritic }: GeneratePostParams & { enableCritic?: boolean }): Promise<{ content: string; topic: string }> {
+export async function generateSocialPost({ topics, styleSample, platform, topicAttributes, temporaryThoughts, newsContext, framework, hallOfFamePosts, enableCritic, refinementThreshold }: GeneratePostParams & { enableCritic?: boolean; refinementThreshold?: number }): Promise<{ content: string; topic: string }> {
 
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.CREATIVE,
+        systemInstruction: `You are a world-class social media ghostwriter.
+Rules:
+- Never use: "Unlock", "Unleash", "Game-changer", "In today's fast-paced world", "I'm excited to announce"
+- Never prefix output with "Here is" or wrap in quotes
+- Output ONLY the post content, nothing else
+- Match the provided writing style exactly
+- MIMIC the provided writing style closely. If casual/witty, be casual/witty. If formal/academic, be formal/academic.`,
+        generationConfig: { temperature: 0.9, topK: 40, topP: 0.9 }
+    });
 
     // Select a random topic from the string name array OR use the news context topic if available
     let topicName = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : "General";
@@ -165,28 +193,20 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     let niche = attributes?.stance || "General Professional";
     if (styleSample && styleSample.length > 50) niche += ` (Style: ${styleSample.substring(0, 50)}...)`;
 
-    // If manual thoughts are provided, skipping Bridge (user knows what they want).
+    // If manual thoughts are provided but are very short, run Bridge to expand it.
     // If News is present, WE MUST RUN BRIDGE to connect it.
     let angle = temporaryThoughts || "";
-    if (!temporaryThoughts) {
-        console.log(`[AI] running Bridge for ${topicName}...`);
-        angle = await generateBridgeAngle(topicName, niche, newsContext);
+    if (!temporaryThoughts || temporaryThoughts.length < 100) {
+        console.log(`[AI] running Bridge for ${temporaryThoughts ? "manual short topic" : topicName}...`);
+        const bridgeTopic = temporaryThoughts ? `${topicName} - ${temporaryThoughts}` : topicName;
+        angle = await generateBridgeAngle(bridgeTopic, niche, newsContext);
         console.log(`[AI] Bridge Angle: "${angle}"`);
+        if (temporaryThoughts) {
+            angle = `User Core Idea to include: "${temporaryThoughts}".\nExpanded Angle: ${angle}`;
+        }
     }
 
-    // ---CHAOS CONSTRAINTS (Prevent Template Drift)---
-    const CHAOS_CONSTRAINTS = [
-        "Constraint: Do not use any emojis.",
-        "Constraint: Start the post with a single word followed by a period.",
-        "Constraint: Use a metaphor to explain the main point.",
-        "Constraint: Do not ask any questions in the post.",
-        "Constraint: Structure the body as a bulleted list.",
-        "Constraint: Keep the tone strictly objective and factual (no 'I think')."
-    ];
-    // 30% chance to apply a chaos constraint to keep things fresh
-    const applyChaos = Math.random() < 0.3;
-    const chaosInstruction = applyChaos ? CHAOS_CONSTRAINTS[Math.floor(Math.random() * CHAOS_CONSTRAINTS.length)] : "";
-    if (applyChaos) console.log(`[AI] Applying Chaos: "${chaosInstruction}"`);
+    // Chaos constraints removed for more natural usability.
 
     const VIRAL_FRAMEWORKS: Record<string, string> = {
         PAS: `
@@ -241,8 +261,8 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     ${frameworkInstruction ? `\n    STRICT FORMATTING INSTRUCTION: Use the following copywriting framework:\n${frameworkInstruction}\n` : ""}
 
     ${hallOfFamePosts && hallOfFamePosts.length > 0 ? `
-    CRITICAL - HALL OF FAME EXAMPLES (FEW-SHOT LEARNING):
-    These are the user's BEST posts. Mimic their sentence length, formatting, spacing, and tone EXACTLY.
+    HALL OF FAME EXAMPLES (FEW-SHOT LEARNING):
+    These are the user's BEST posts. Analyze their tone, vocabulary, and stylistic voice, and apply it to this new post. Do not copy their exact formatting if a Framework structure is specified. Make it sound like this person wrote it.
     ${hallOfFamePosts.map((p, i) => `Example ${i + 1}:\n"${p}"`).join("\n\n")}
     ` : ""}
 
@@ -254,7 +274,7 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     
     Constraints:
     - For Twitter: 
-        - Max 260 characters (including hashtags).
+        - Max 240 characters (including hashtags).
         - Write like a real person, not a bot. Avoid "marketing speak" or robotic sentence structures.
         - Be direct, punchy, and conversational.
         - Identify and use the top 2-4 most popular and relevant hashtags for this topic. Avoid generic tags; prefer high-traffic niche tags.
@@ -277,7 +297,7 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
     - Do NOT include "Here is a post" or quotes. Just output the content.
     - CRITICAL: MIMIC the provided writing style closely. If the sample is casual/witty, be casual/witty. If it's formal/academic, be formal/academic.
     ${frameworkInstruction ? `- CRITICAL: Ensure the post clearly follows the requested framework structure.` : ""}
-    ${chaosInstruction ? `- STRICT CONSTRAINT: ${chaosInstruction}` : ""}
+
     
     Generate ${platform === "LINKEDIN" ? "a high-performing LinkedIn post" : platform === "THREADS" ? "an engaging Threads post" : "a Tweet"} based on the Angle.
   `;
@@ -286,17 +306,17 @@ export async function generateSocialPost({ topics, styleSample, platform, topicA
         const result = await model.generateContent(prompt);
         let content = result.response.text().trim();
 
-        // --- STEP 3: THE CRITIC LOOP (Optional / Turbo Mode Check) ---
-        // Defaults to FALSE in this implementation unless enableCritic is true, 
-        // to save costs until we fully rollout.
-        const shouldCritique = temporaryThoughts ? false : (enableCritic ?? false); // Strict check: only if enableCritic is explicitly true
+        // --- STEP 3: THE CRITIC LOOP ---
+        // Always-on critic with tier-aware refinement threshold
+        const shouldCritique = temporaryThoughts ? false : (enableCritic ?? false);
+        const threshold = refinementThreshold ?? 75;
 
 
         if (shouldCritique) {
             const critique = await critiquePost(content, platform, topicName);
-            console.log(`[AI] Critic Score: ${critique.score}`);
+            console.log(`[AI] Critic Score: ${critique.score} (threshold: ${threshold})`);
 
-            if (critique.score < 80) {
+            if (critique.score < threshold) {
                 console.log(`[AI] Refining post due to low score... Feedback: ${critique.feedback}`);
                 content = await refinePost(content, critique.feedback, platform);
             }
@@ -327,7 +347,25 @@ export async function generatePostContent(
 
 export async function analyzeTrends(newsItems: any[]): Promise<any[]> {
 
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.ARRAY,
+                items: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        id: { type: SchemaType.NUMBER, description: "Index number of the news item" },
+                        viralScore: { type: SchemaType.NUMBER, description: "Viral potential score 0-100" },
+                        summary: { type: SchemaType.STRING, description: "1 sentence summary of why it matters" },
+                        hook: { type: SchemaType.STRING, description: "A catchy hook sentence to start a post" }
+                    },
+                    required: ["id", "viralScore", "summary", "hook"]
+                }
+            }
+        }
+    });
 
     // Limit to batch of 10 to avoid token limits
     const batch = newsItems.slice(0, 10);
@@ -341,20 +379,17 @@ export async function analyzeTrends(newsItems: any[]): Promise<any[]> {
        Snippet: ${item.contentSnippet}
     `).join("\n")}
 
-    For each item, output a JSON object with:
+    For each item, analyze for:
     - id: (the index number, e.g. 1)
     - viralScore: (number 0-100, based on controversy, relevance, or "breaking" nature)
     - summary: (1 sentence summary of WHY it matters)
     - hook: (A catchy "hook" sentence to start a post with)
-    
-    Output ONLY valid JSON array.
     `;
 
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        const analysis = JSON.parse(text);
+        const analysis = JSON.parse(response.text());
 
         // Merge analysis with original items
         return batch.map(item => {
@@ -390,7 +425,7 @@ export async function checkStyleMatch(sample: string, generated: string) {
 }
 
 export async function generateStyleDescription(texts: string[]): Promise<string> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({ model: MODELS.ANALYTICAL });
 
     const prompt = `
     Analyze the following social media posts and create a concise description of the writing style.
@@ -416,7 +451,7 @@ export async function generateStyleDescription(texts: string[]): Promise<string>
 
 
 export async function regeneratePostContent(currentContent: string, selectedText: string, instruction: string, platform: string): Promise<string> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = getGenAI().getGenerativeModel({ model: MODELS.CREATIVE });
 
     const prompt = `
     You are an expert social media editor.
@@ -459,7 +494,32 @@ export interface VideoScript {
 }
 
 export async function generateVideoScript(topicOrText: string): Promise<VideoScript> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    title: { type: SchemaType.STRING, description: "Video title" },
+                    scenes: {
+                        type: SchemaType.ARRAY,
+                        items: {
+                            type: SchemaType.OBJECT,
+                            properties: {
+                                id: { type: SchemaType.STRING, description: "Scene ID" },
+                                type: { type: SchemaType.STRING, description: "HOOK, BODY, or CTA" },
+                                text: { type: SchemaType.STRING, description: "Script text for this scene" },
+                                visualCue: { type: SchemaType.STRING, description: "Visual description" }
+                            },
+                            required: ["id", "type", "text", "visualCue"]
+                        }
+                    }
+                },
+                required: ["title", "scenes"]
+            }
+        }
+    });
 
     const prompt = `
     You are an expert TikTok/Reels scriptwriter.
@@ -475,23 +535,12 @@ export async function generateVideoScript(topicOrText: string): Promise<VideoScr
     - Total Scenes: Strict range of 3 to 6 scenes total.
     - Tone: Conversational, high energy, punchy.
     - Visual Cues: Describe what should be on screen simply (e.g., "Person acting surprised", "Text overlay: 'Secret Hack'").
-
-    Output Format:
-    Return ONLY valid JSON with this structure:
-    {
-        "title": "Video Title",
-        "scenes": [
-            { "id": "1", "type": "HOOK", "text": "...", "visualCue": "..." },
-            ...
-        ]
-    }
     `;
 
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(text);
+        return JSON.parse(response.text());
     } catch (error) {
         console.error("AI Script Generation Error:", error);
         throw new Error("Failed to generate script.");
@@ -505,7 +554,24 @@ export interface CarouselSlide {
 }
 
 export async function generateCarouselContent(topic: string): Promise<CarouselSlide[]> {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.ARRAY,
+                items: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        title: { type: SchemaType.STRING, description: "Slide title" },
+                        content: { type: SchemaType.STRING, description: "Slide content text" },
+                        imageKeyword: { type: SchemaType.STRING, description: "Keyword for background image" }
+                    },
+                    required: ["title", "content"]
+                }
+            }
+        }
+    });
 
     const prompt = `
     You are an expert LinkedIn Carousel creator.
@@ -520,24 +586,62 @@ export async function generateCarouselContent(topic: string): Promise<CarouselSl
     - Total Slides: 5 to 7.
     - Tone: Professional but engaging, like a thought leader.
 
-    Output Format (JSON Array ONLY):
-    [
-        { "title": "Big Hook Title", "content": "Sub-hook or extremely short context.", "imageKeyword": "shock" },
-        { "title": "Point 1", "content": "Explanation...", "imageKeyword": "business meeting" }
-    ]
+    Output 5 to 7 slides total.
     `;
 
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        // Clean markdown code blocks if present
-        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(text);
+        return JSON.parse(response.text());
     } catch (error) {
         console.error("AI Carousel Generation Error:", error);
         // Fallback script if AI fails
         return [
             { title: "Error Generating", content: "Please try again.", imageKeyword: "error" }
         ];
+    }
+}
+
+export async function analyzeFollowerTopicsAndGeneratePost(tweets: string[], platform: string = "TWITTER"): Promise<{ topics: string[], post: string }> {
+    const model = getGenAI().getGenerativeModel({
+        model: MODELS.ANALYTICAL,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    topics: {
+                        type: SchemaType.ARRAY,
+                        items: { type: SchemaType.STRING },
+                        description: "Top 3 trending topics"
+                    },
+                    post: { type: SchemaType.STRING, description: "Generated post content" }
+                },
+                required: ["topics", "post"]
+            }
+        }
+    });
+    
+    // We only take up to 30 tweets to keep the prompt reasonable
+    const sampleTweets = tweets.slice(0, 30);
+    
+    const prompt = `
+    You are an expert social media analyst and ghostwriter.
+    Here is a sample of recent posts from the user's timeline (people they follow):
+    ---
+    ${sampleTweets.map((t, i) => `[${i+1}] ${t}`).join('\n\n')}
+    ---
+    
+    Task:
+    1. Identify the top 3 trending topics or common themes being discussed in these posts.
+    2. Write a viral, highly original ${platform} post that adds value to the most interesting/prominent trend from the list. It should sound human and natural.
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        return JSON.parse(result.response.text());
+    } catch (e) {
+         console.error("Follower analysis failed:", e);
+         throw new Error("Failed to analyze topics and generate post");
     }
 }

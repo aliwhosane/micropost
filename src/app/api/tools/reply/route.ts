@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,29 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        replies: {
+                            type: SchemaType.ARRAY,
+                            items: {
+                                type: SchemaType.OBJECT,
+                                properties: {
+                                    style: { type: SchemaType.STRING, description: "Reply style (Funny, Grateful, or Question)" },
+                                    content: { type: SchemaType.STRING, description: "The reply content" }
+                                },
+                                required: ["style", "content"]
+                            }
+                        }
+                    },
+                    required: ["replies"]
+                }
+            }
+        });
 
         const prompt = `
             You are a social media manager known for great audience engagement.
@@ -39,34 +62,12 @@ export async function POST(req: Request) {
             - Keep them short (under 280 chars).
             - Sound authentic, not like a bot.
             - No hashtags.
-            
-            Return the response in strict JSON format with this structure:
-            {
-                "replies": [
-                    {
-                        "style": "Funny",
-                        "content": "..."
-                    },
-                    {
-                        "style": "Grateful",
-                        "content": "..."
-                    },
-                    {
-                        "style": "Question",
-                        "content": "..."
-                    }
-                ]
-            }
-            
-            Do not include markdown code blocks. Just return the raw JSON string.
         `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
 
     } catch (error) {
         console.error("Reply generation error:", error);

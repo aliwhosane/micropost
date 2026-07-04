@@ -1,8 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -11,6 +9,25 @@ export async function POST(req: Request) {
         if (!topic) {
             return NextResponse.json({ error: "Topic is required" }, { status: 400 });
         }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.ARRAY,
+                    items: {
+                        type: SchemaType.OBJECT,
+                        properties: {
+                            hook: { type: SchemaType.STRING, description: "The text of the hook" },
+                            category: { type: SchemaType.STRING, description: "The style/category of the hook" },
+                        },
+                        required: ["hook", "category"],
+                    },
+                },
+            },
+        });
 
         const prompt = `
         You are a viral social media expert.
@@ -23,20 +40,13 @@ export async function POST(req: Request) {
         4. Statistical/Numbers (e.g., "99% of people fail at...")
         5. How-to/Benefit (e.g., "How to allow X without Y")
         
-        Return the response as a JSON array where each object has:
-        - "hook": The text of the hook.
-        - "category": The style/category of the hook.
-        
-        Output valid JSON only.
+        Return 10 hooks, each with "hook" and "category" fields.
         `;
 
         const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const hooks = JSON.parse(result.response.text());
 
-        // Basic clean up of markdown code blocks if present
-        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        return NextResponse.json({ hooks: JSON.parse(cleanedText) });
+        return NextResponse.json({ hooks });
     } catch (error) {
         console.error("Viral hook generation error:", error);
         return NextResponse.json({ error: "Failed to generate hooks" }, { status: 500 });

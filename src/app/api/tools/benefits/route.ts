@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,30 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.ANALYTICAL,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        conversions: {
+                            type: SchemaType.ARRAY,
+                            items: {
+                                type: SchemaType.OBJECT,
+                                properties: {
+                                    feature: { type: SchemaType.STRING, description: "The original feature" },
+                                    benefit: { type: SchemaType.STRING, description: "The emotional, outcome-driven benefit" },
+                                    emotion: { type: SchemaType.STRING, description: "The core emotion targeted (e.g. Relief, Security)" }
+                                },
+                                required: ["feature", "benefit", "emotion"]
+                            }
+                        }
+                    },
+                    required: ["conversions"]
+                }
+            }
+        });
 
         const prompt = `
             You are a world-class copywriter who follows the "Sell the Hole, Not the Drill" philosophy.
@@ -29,27 +53,17 @@ export async function POST(req: Request) {
             
             Features:
             "${features}"
-            
-            Return the response in strict JSON format with this structure:
-            {
-                "conversions": [
-                    {
-                        "feature": "50GB Storage", // The original feature
-                        "benefit": "Never delete a photo specifically to make space again.", // The emotional benefit
-                        "emotion": "Relief/Security" // The core emotion targeted
-                    }
-                ]
-            }
-            
-            Do not include markdown code blocks. Just return the raw JSON string.
+
+            For each feature, provide:
+            - feature: The original feature text
+            - benefit: An emotional, outcome-driven benefit statement
+            - emotion: The core emotion targeted (e.g. Relief, Security, Confidence)
         `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
 
     } catch (error) {
         console.error("Benefit generation error:", error);

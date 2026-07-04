@@ -90,9 +90,15 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
         const limitConfig = getPlanLimits(tier);
         const maxPosts = limitConfig.postsPerDay;
 
-        // Turbo Mode Logic: Starter tier = Turbo (No Critic), Others = Deep (Critic)
-        // Also enable critic if manual run (targetUserId present) for testing quality
-        const enableCritic = tier !== "STARTER" || !!targetUserId;
+        // Critic now uses gemini-2.5-flash — negligible cost (~$0.0003/call)
+        // Enable for ALL tiers; refinement threshold is tier-aware
+        const enableCritic = true;
+        const REFINEMENT_THRESHOLDS: Record<string, number> = {
+            STARTER: 60,   // Only refine obviously bad posts (saves cost)
+            PRO: 75,       // Moderate quality bar
+            AGENCY: 85,    // High quality bar — always polish
+        };
+        const refinementThreshold = REFINEMENT_THRESHOLDS[tier] || 75;
 
         twitterCount = Math.min(twitterCount, maxPosts);
         linkedinCount = Math.min(linkedinCount, maxPosts);
@@ -192,6 +198,22 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                 }
             });
 
+            // Fetch Hall of Fame posts ONCE per platform (not per post iteration)
+            const hallOfFamePostsRaw = await prisma.post.findMany({
+                where: {
+                    userId: user.id,
+                    hallOfFame: true,
+                    content: { not: "" }
+                },
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                select: { content: true }
+            });
+            // Shuffle and grab up to 3 for variety
+            const shuffledHallOfFame = hallOfFamePostsRaw.sort(() => 0.5 - Math.random());
+            const selectedHallOfFame = shuffledHallOfFame.slice(0, 3);
+            const hallOfFamePosts = selectedHallOfFame.map(p => p.content);
+
             for (let i = 0; i < count; i++) {
                 generationTasks.push(async () => {
                     try {
@@ -222,18 +244,7 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                         // CRITICAL: If temporaryThoughts (manual input) is present, do NOT use random topics.
                         const useRandomTopic = !temporaryThoughts;
 
-                        // Fetch Hall of Fame posts (Limit to 3 to save tokens)
-                        const hallOfFamePostsRaw = await prisma.post.findMany({
-                            where: {
-                                userId: user.id,
-                                hallOfFame: true,
-                                content: { not: "" }
-                            },
-                            take: 3,
-                            orderBy: { createdAt: 'desc' }, // Use most recent best posts
-                            select: { content: true }
-                        });
-                        const hallOfFamePosts = hallOfFamePostsRaw.map(p => p.content);
+
 
                         const { content, topic } = await generateSocialPost({
                             topics: useRandomTopic ? topicNames : [], // Pass empty topics if manual
@@ -248,7 +259,8 @@ export async function runDailyGeneration(targetUserId?: string, temporaryThought
                             newsContext: currentNewsContext,
                             framework: currentFramework,
                             hallOfFamePosts: hallOfFamePosts,
-                            enableCritic: enableCritic
+                            enableCritic: enableCritic,
+                            refinementThreshold: refinementThreshold
                         });
                         const post = await prisma.post.create({
                             data: {

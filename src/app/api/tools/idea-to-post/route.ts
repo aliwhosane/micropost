@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from '@/lib/ai';
 
 export async function POST(req: Request) {
     try {
@@ -27,7 +28,28 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); // Using a fast, capable model
+        const postItemSchema: Schema = {
+            type: SchemaType.OBJECT,
+            properties: {
+                content: { type: SchemaType.STRING, description: "The post content" }
+            },
+            required: ["content"]
+        };
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json" as const,
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        linkedin: { type: SchemaType.ARRAY, items: postItemSchema },
+                        twitter: { type: SchemaType.ARRAY, items: postItemSchema },
+                        threads: { type: SchemaType.ARRAY, items: postItemSchema }
+                    },
+                    required: ["linkedin", "twitter", "threads"]
+                }
+            }
+        });
 
         const prompt = `
             You are an expert social media strategist and ghostwriter.
@@ -81,15 +103,11 @@ export async function POST(req: Request) {
                 ]
             }
 
-            Do not include markdown formatting (like \`\`\`json). Return only the raw JSON string.
+            Create 3 distinct variations for each platform.
         `;
 
         const result = await model.generateContent(prompt);
-        const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        const data = JSON.parse(cleanedText);
+        const data = JSON.parse(result.response.text());
 
         return NextResponse.json(data);
 

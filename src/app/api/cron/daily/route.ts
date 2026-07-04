@@ -1,10 +1,12 @@
 import { runDailyGeneration } from "@/lib/workflow";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
-    // Check for Vercel Cron Secret
+    // Check for Vercel Cron Secret — DENY if not configured
     const authHeader = request.headers.get("authorization");
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 

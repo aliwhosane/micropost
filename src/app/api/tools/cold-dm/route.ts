@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,29 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.CREATIVE,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        dms: {
+                            type: SchemaType.ARRAY,
+                            items: {
+                                type: SchemaType.OBJECT,
+                                properties: {
+                                    label: { type: SchemaType.STRING, description: "Option label (e.g. Hook focus, Value focus, Question focus)" },
+                                    content: { type: SchemaType.STRING, description: "The DM script content" }
+                                },
+                                required: ["label", "content"]
+                            }
+                        }
+                    },
+                    required: ["dms"]
+                }
+            }
+        });
 
         const prompt = `
             You are an expert sales copywriter specializing in cold outreach.
@@ -36,34 +59,12 @@ export async function POST(req: Request) {
             - No "I hope this finds you well" fluff.
             - Focus on the recipient's pain points or value.
             - Sound human, not robotic.
-            
-            Return the response in strict JSON format with this structure:
-            {
-                "dms": [
-                    {
-                        "label": "Option 1 (Hook focus)",
-                        "content": "Subject (if email) or first line...\n\nBody..."
-                    },
-                     {
-                        "label": "Option 2 (Value focus)",
-                        "content": "..."
-                    },
-                     {
-                        "label": "Option 3 (Question focus)",
-                        "content": "..."
-                    }
-                ]
-            }
-            
-            Do not include markdown code blocks. Just return the raw JSON string.
         `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
 
     } catch (error) {
         console.error("Cold DM generation error:", error);

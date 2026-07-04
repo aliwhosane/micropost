@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { MODELS } from "@/lib/ai";
 
 export async function POST(req: Request) {
     try {
@@ -20,7 +21,34 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({
+            model: MODELS.ANALYTICAL,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        score: {
+                            type: SchemaType.NUMBER,
+                            description: "0-100 Human Score. 100 is perfectly human, 0 is a robot."
+                        },
+                        matches: {
+                            type: SchemaType.ARRAY,
+                            items: {
+                                type: SchemaType.OBJECT,
+                                properties: {
+                                    word: { type: SchemaType.STRING, description: "The specific word or phrase found in the text" },
+                                    alternative: { type: SchemaType.STRING, description: "A punchier, human alternative" },
+                                    reason: { type: SchemaType.STRING, description: "Why it is bad" }
+                                },
+                                required: ["word", "alternative", "reason"]
+                            }
+                        }
+                    },
+                    required: ["score", "matches"]
+                }
+            }
+        });
 
         const prompt = `
             You are a ruthless editor who hates corporate jargon, buzzwords, and vague business speak.
@@ -30,28 +58,15 @@ export async function POST(req: Request) {
             Text to analyze:
             "${text}"
             
-            Return the response in strict JSON format with this structure:
-            {
-                "score": 85, // 0-100 "Human Score". 100 is perfectly human, 0 is a robot.
-                "matches": [
-                    {
-                        "word": "synergy", // The specific word or phrase found in the text
-                        "alternative": "teamwork", // A punchier, human alternative
-                        "reason": "Overused and vague." // Why it's bad
-                    }
-                ]
-            }
-            
+            For each match, provide the specific word or phrase, a punchier human alternative, and a reason why it is bad.
+            Give a "score" from 0-100 representing how human the text sounds (100 = perfectly human, 0 = a robot).
             If the text is clean, return a high score and empty matches array.
-            Do not include markdown code blocks. Just return the raw JSON string.
         `;
 
         const result = await model.generateContent(prompt);
         const response = result.response;
-        const responseText = response.text();
-        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        return NextResponse.json(JSON.parse(cleanedText));
+        return NextResponse.json(JSON.parse(response.text()));
 
     } catch (error) {
         console.error("Buzzword analysis error:", error);
