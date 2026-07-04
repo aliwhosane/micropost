@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { createScriptAction, renderStoryboardAction, generateAudioAction } from "@/app/actions/shorts";
 import { Clapperboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { TopicInput } from "./wizard/TopicInput";
 import { ScriptReview } from "./wizard/ScriptReview";
 import { StoryboardReview } from "./wizard/StoryboardReview";
@@ -67,7 +68,7 @@ export function ScriptWizard({ initialContent }: { initialContent?: string }) {
             updateMaxStep("STORYBOARD");
         } else {
             console.error("Render Visuals Error:", res.error);
-            alert(`Failed to render visuals: ${res.error || "Unknown error"}`);
+            toast.error(`Failed to render visuals: ${res.error || "Unknown error"}`);
         }
     }
 

@@ -79,6 +79,20 @@
       background-position: 0% 50%;
     }
   }
+
+  --animate-slide-down: slide-down 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
+
+  @keyframes slide-down {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
 
 /* Material Design 3 Blue-centric Palette */

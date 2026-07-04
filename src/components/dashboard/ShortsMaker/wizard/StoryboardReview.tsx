@@ -31,6 +31,9 @@ export function StoryboardReview({
     onNext
 }: StoryboardReviewProps) {
 
+    const [editingSceneIndex, setEditingSceneIndex] = useState<number | null>(null);
+    const [editText, setEditText] = useState("");
+
     const toggleOverlay = (idx: number, id: string) => {
         const newScenes = [...renderedScenes];
         const current = newScenes[idx].overlays || [];
@@ -57,16 +60,8 @@ export function StoryboardReview({
                                     {/* Edit Text */}
                                     <button
                                         onClick={() => {
-                                            const newText = prompt("Edit text for this scene:", scene.text);
-                                            if (newText && newText !== scene.text) {
-                                                const newScenes = [...renderedScenes];
-                                                newScenes[idx] = { ...scene, text: newText };
-                                                setRenderedScenes(newScenes);
-                                                // Trigger Regen (Simulated click)
-                                                // Ideally we call the update function directly, but button is below
-                                                const btn = document.getElementById(`regen-btn-${idx}`);
-                                                if (btn) (btn as HTMLButtonElement).click();
-                                            }
+                                            setEditingSceneIndex(idx);
+                                            setEditText(scene.text);
                                         }}
                                         className="p-2 bg-surface/80 text-on-surface rounded-full hover:bg-surface border border-white/20 backdrop-blur-sm shadow-sm"
                                         title="Edit Text"
@@ -112,6 +107,43 @@ export function StoryboardReview({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Inline Scene Text Editor */}
+                            {editingSceneIndex === idx && (
+                                <div className="bg-surface border border-outline-variant/20 rounded-xl p-3 space-y-2 shadow-md">
+                                    <textarea
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                        className="w-full p-2 text-xs bg-surface-variant/30 border border-outline-variant/10 rounded-lg text-on-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                                        rows={3}
+                                        autoFocus
+                                    />
+                                    <div className="flex gap-2 justify-end">
+                                        <button
+                                            onClick={() => setEditingSceneIndex(null)}
+                                            className="px-3 py-1 text-xs rounded-lg border border-outline-variant/20 text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (editText && editText !== scene.text) {
+                                                    const newScenes = [...renderedScenes];
+                                                    newScenes[idx] = { ...scene, text: editText };
+                                                    setRenderedScenes(newScenes);
+                                                    // Trigger image regeneration
+                                                    const btn = document.getElementById(`regen-btn-${idx}`);
+                                                    if (btn) (btn as HTMLButtonElement).click();
+                                                }
+                                                setEditingSceneIndex(null);
+                                            }}
+                                            className="px-3 py-1 text-xs rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors font-medium"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <p className="text-xs text-on-surface-variant font-mono text-center">Scene {idx + 1}</p>

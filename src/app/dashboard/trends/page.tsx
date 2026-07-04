@@ -88,7 +88,7 @@ export default function TrendsPage() {
                         <Flame className="text-orange-500 fill-orange-500" />
                         TrendSurfer
                     </h1>
-                    <p className="text-zinc-400">
+                    <p className="text-on-surface-variant">
                         Catch viral waves before they break. Real-time newsjacking for your niche.
                     </p>
                 </div>
@@ -96,7 +96,7 @@ export default function TrendsPage() {
                 <button
                     onClick={() => activeTopic && handleRefresh(activeTopic)}
                     disabled={loading}
-                    className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-variant/50 px-4 py-2 text-sm font-medium text-on-surface transition-colors hover:bg-surface-variant disabled:opacity-50"
                 >
                     {loading ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
                     Refresh Trends
@@ -110,8 +110,8 @@ export default function TrendsPage() {
                         key={topic}
                         onClick={() => setActiveTopic(topic)}
                         className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${activeTopic === topic
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                            : "bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
+                            ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+                            : "bg-surface-variant/50 text-on-surface-variant hover:bg-surface-variant hover:text-on-surface"
                             }`}
                     >
                         {topic}
@@ -122,7 +122,7 @@ export default function TrendsPage() {
             {/* Trends Grid */}
             {loading ? (
                 <div className="flex justify-center py-20">
-                    <Loader2 className="animate-spin text-zinc-500" size={32} />
+                    <Loader2 className="animate-spin text-on-surface-variant" size={32} />
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -138,7 +138,7 @@ export default function TrendsPage() {
                         />
                     ))}
                     {trends.length === 0 && !loading && (
-                        <div className="col-span-full py-10 text-center text-zinc-500">
+                        <div className="col-span-full py-10 text-center text-on-surface-variant">
                             No trends found. Try refreshing or selecting a different topic.
                         </div>
                     )}
@@ -147,27 +147,27 @@ export default function TrendsPage() {
 
             {/* Draft Logic Modal */}
             <Dialog open={isDraftOpen} onOpenChange={setIsDraftOpen}>
-                <DialogContent className="sm:max-w-md bg-zinc-900 border border-white/10 text-white">
+                <DialogContent className="sm:max-w-md bg-surface border border-outline-variant text-on-surface">
                     <DialogHeader>
                         <DialogTitle>Draft Trend Post</DialogTitle>
                     </DialogHeader>
 
                     {selectedTrend && (
                         <div className="space-y-4 py-4">
-                            <div className="rounded-lg bg-white/5 p-3 text-sm text-zinc-300">
-                                <span className="font-semibold text-white">Target Story:</span> {selectedTrend.title}
+                            <div className="rounded-lg bg-surface-variant/50 p-3 text-sm text-on-surface-variant">
+                                <span className="font-semibold text-on-surface">Target Story:</span> {selectedTrend.title}
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-200">Platform</label>
+                                <label className="text-sm font-medium text-on-surface">Platform</label>
                                 <div className="flex gap-2">
                                     {(["TWITTER", "LINKEDIN", "THREADS"] as const).map(p => (
                                         <button
                                             key={p}
                                             onClick={() => setDraftPlatform(p)}
                                             className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-all ${draftPlatform === p
-                                                ? "border-blue-500 bg-blue-500/10 text-blue-400"
-                                                : "border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10"
+                                                ? "border-primary bg-primary/10 text-primary"
+                                                : "border-outline-variant bg-surface-variant/50 text-on-surface-variant hover:bg-surface-variant"
                                                 }`}
                                         >
                                             {p.charAt(0) + p.slice(1).toLowerCase()}
@@ -177,20 +177,20 @@ export default function TrendsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-200">Special Instructions (Optional)</label>
+                                <label className="text-sm font-medium text-on-surface">Special Instructions (Optional)</label>
                                 <Textarea
                                     placeholder="E.g., Connect this to my startup's mission..."
                                     value={draftInstructions}
                                     onChange={(e) => setDraftInstructions(e.target.value)}
-                                    className="bg-black/20 border-white/10 resize-none h-24"
+                                    className="bg-surface-variant border-outline-variant resize-none h-24"
                                 />
                             </div>
                         </div>
                     )}
 
                     <DialogFooter>
-                        <Button variant="text" onClick={() => setIsDraftOpen(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
-                        <Button onClick={handleGenerateDraft} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-500 text-white">
+                        <Button variant="text" onClick={() => setIsDraftOpen(false)} className="text-on-surface-variant hover:text-on-surface">Cancel</Button>
+                        <Button onClick={handleGenerateDraft} disabled={isGenerating} className="bg-primary hover:bg-primary/90 text-on-primary">
                             {isGenerating ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <PenTool className="mr-2 h-4 w-4" />}
                             {isGenerating ? "Drafting..." : "Generate Draft"}
                         </Button>

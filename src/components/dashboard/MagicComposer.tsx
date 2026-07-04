@@ -45,7 +45,7 @@ const TEMPLATES = [
     }
 ];
 
-export function MagicComposer({ isHero = false, userName = "" }: { isHero?: boolean; userName?: string }) {
+export function MagicComposer({ isHero = false, userName = "", topics }: { isHero?: boolean; userName?: string; topics?: string[] }) {
     const { activeClientId } = useClient();
     const [thoughts, setThoughts] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
@@ -122,10 +122,13 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && thoughts.trim()) {
+            e.preventDefault();
             handleGenerate();
         }
     };
+
+    const showTopicChips = isExpanded && thoughts.length < 20 && topics && topics.length > 0;
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -150,6 +153,35 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
                 "bg-surface"
             )}>
                 <div className="p-4">
+                    {/* Topic Chips */}
+                    <AnimatePresence>
+                        {showTopicChips && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="flex flex-wrap gap-2 mb-3 overflow-hidden"
+                            >
+                                {topics?.slice(0, 5).map((topic, i) => (
+                                    <motion.button
+                                        key={topic}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        onClick={() => {
+                                            setThoughts(`Write about ${topic}`);
+                                            textareaRef.current?.focus();
+                                        }}
+                                        className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                                    >
+                                        {topic}
+                                    </motion.button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <Textarea
                         ref={textareaRef}
                         placeholder={isHero ? "What do you want to create today?" : "Draft a new post..."}
@@ -162,6 +194,18 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
                         onFocus={handleFocus}
                         onKeyDown={handleKeyDown}
                     />
+
+                    {/* Character Feedback */}
+                    {isExpanded && thoughts.length > 0 && (
+                        <div className={cn(
+                            "text-xs text-right mt-1 transition-colors",
+                            thoughts.length < 50 ? "text-on-surface-variant/40" :
+                            thoughts.length < 200 ? "text-on-surface-variant/60" :
+                            "text-primary"
+                        )}>
+                            {thoughts.length} characters
+                        </div>
+                    )}
 
                     <AnimatePresence>
                         {isExpanded && (
@@ -234,23 +278,30 @@ export function MagicComposer({ isHero = false, userName = "" }: { isHero?: bool
                                         </DropdownMenu>
                                     </div>
 
-                                    {/* Action Button */}
-                                    <Button
-                                        onClick={handleGenerate}
-                                        disabled={isGenerating || platforms.length === 0}
-                                        className={cn(
-                                            "rounded-full transition-all duration-300",
-                                            isHero ? "px-8 py-6 text-lg" : ""
-                                        )}
-                                    >
-                                        {isGenerating ? (
-                                            <>Generating...</>
-                                        ) : (
-                                            <>
-                                                Generate <Send className="w-4 h-4 ml-2" />
-                                            </>
-                                        )}
-                                    </Button>
+                                    {/* Action Button + Shortcut Hint */}
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs text-on-surface-variant/40 hidden md:inline-flex items-center gap-1">
+                                            <kbd className="px-1 py-0.5 rounded bg-surface-variant/50 text-[10px] font-mono">⌘</kbd>
+                                            <kbd className="px-1 py-0.5 rounded bg-surface-variant/50 text-[10px] font-mono">Enter</kbd>
+                                            to generate
+                                        </span>
+                                        <Button
+                                            onClick={handleGenerate}
+                                            disabled={isGenerating || platforms.length === 0}
+                                            className={cn(
+                                                "rounded-full transition-all duration-300",
+                                                isHero ? "px-8 py-6 text-lg" : ""
+                                            )}
+                                        >
+                                            {isGenerating ? (
+                                                <>Generating...</>
+                                            ) : (
+                                                <>
+                                                    Generate <Send className="w-4 h-4 ml-2" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}

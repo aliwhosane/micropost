@@ -35,7 +35,12 @@ export function FeaturesSection() {
                             </div>
                         </div>
                     </motion.div>
-                    <div className="order-1 md:order-2 space-y-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="order-1 md:order-2 space-y-6"
+                    >
                         <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Sparkles className="h-6 w-6" />
                         </div>
@@ -43,12 +48,17 @@ export function FeaturesSection() {
                         <p className="text-xl text-on-surface-variant leading-relaxed">
                             Don't guess. Use proven frameworks like <b>PAS</b>, <b>AIDA</b>, and <b>Storytelling</b> to hook readers instantly. We analyzed 1M+ viral posts to teach our AI how to write for engagement.
                         </p>
-                    </div>
+                    </motion.div>
                 </div>
 
                 {/* Feature 2 */}
                 <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="space-y-6"
+                    >
                         <div className="h-12 w-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
                             <Clock className="h-6 w-6" />
                         </div>
@@ -57,7 +67,7 @@ export function FeaturesSection() {
                             Wake up to a fresh batch of drafted posts in your dashboard (or inbox).
                             One click to <b>Approve</b>, <b>Edit</b>, or <b>Regenerate</b>. You stay in control, but without the effort.
                         </p>
-                    </div>
+                    </motion.div>
                     <motion.div style={{ opacity, scale }} className="relative">
                         <div className="absolute inset-0 bg-gradient-to-bl from-secondary/20 to-transparent blur-3xl -z-10 rounded-full" />
                         <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
@@ -82,34 +92,39 @@ export function FeaturesSection() {
                 {/* Feature 3: Idea to Image */}
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <motion.div style={{ opacity, scale }} className="order-2 md:order-1 relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-transparent blur-3xl -z-10 rounded-full" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-tertiary/20 to-transparent blur-3xl -z-10 rounded-full" />
                         <div className="bg-surface border border-outline-variant/10 rounded-2xl p-6 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 group">
                             <div className="space-y-4">
                                 <div className="flex gap-2 items-center text-sm font-mono text-on-surface-variant/80 bg-surface-variant/50 p-3 rounded-lg">
-                                    <Wand2 className="h-4 w-4 text-purple-500" />
+                                    <Wand2 className="h-4 w-4 text-tertiary" />
                                     <span>"Cyberpunk developer setup with neon lights..."</span>
                                 </div>
                                 <div className="aspect-video bg-surface-variant rounded-lg overflow-hidden relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-tertiary/10 to-primary/10" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <ImageIcon className="h-12 w-12 text-purple-500/50 group-hover:scale-110 transition-transform duration-500" />
+                                        <ImageIcon className="h-12 w-12 text-tertiary/50 group-hover:scale-110 transition-transform duration-500" />
                                     </div>
                                     <div className="absolute bottom-2 right-2 flex gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
+                                        <div className="h-2 w-2 rounded-full bg-tertiary animate-pulse" />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </motion.div>
-                    <div className="order-1 md:order-2 space-y-6">
-                        <div className="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="order-1 md:order-2 space-y-6"
+                    >
+                        <div className="h-12 w-12 bg-tertiary/10 rounded-xl flex items-center justify-center text-tertiary">
                             <ImageIcon className="h-6 w-6" />
                         </div>
                         <h2 className="text-4xl font-bold tracking-tight">Stop Scroll with AI Images.</h2>
                         <p className="text-xl text-on-surface-variant leading-relaxed">
                             Turn abstract ideas into stunning visuals for LinkedIn and Threads. No design skills needed. Just describe it, and we'll generate it.
                         </p>
-                    </div>
+                    </motion.div>
                 </div>
 
             </motion.div>

@@ -61,7 +61,7 @@ export function TopicCard({ topic }: { topic: Topic }) {
                         <div className="space-y-2 w-full">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-semibold text-lg text-on-surface leading-none">{topic.name}</h3>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-medium ${topic.enabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-medium ${topic.enabled ? "bg-secondary-container text-on-secondary-container" : "bg-surface-variant text-on-surface-variant"}`}>
                                     {topic.enabled ? "Active" : "Paused"}
                                 </span>
                             </div>

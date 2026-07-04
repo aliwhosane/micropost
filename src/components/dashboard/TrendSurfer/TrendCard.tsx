@@ -31,29 +31,29 @@ export const TrendCard: React.FC<TrendCardProps> = ({
                 : "bg-gradient-to-r from-yellow-500/10 to-blue-500/10";
 
     return (
-        <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-5 shadow-sm transition-all hover:border-white/20 hover:shadow-lg backdrop-blur-md">
+        <div className="group relative overflow-hidden rounded-xl border border-outline-variant bg-surface-variant/50 p-5 shadow-sm transition-all hover:border-outline hover:shadow-lg backdrop-blur-md">
             {/* Viral Badge */}
             <div className="mb-3 flex items-center justify-between">
                 <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${bgGradient} ${scoreColor}`}>
                     <Flame size={12} className={viralScore >= 80 ? "fill-red-500" : ""} />
                     <span>Viral Score: {viralScore}/100</span>
                 </div>
-                <div className="text-xs text-zinc-400">{source} • {new Date(publishedAt).toLocaleDateString()}</div>
+                <div className="text-xs text-on-surface-variant">{source} • {new Date(publishedAt).toLocaleDateString()}</div>
             </div>
 
             {/* Content */}
-            <h3 className="mb-2 text-lg font-semibold leading-tight text-white group-hover:text-blue-400 transition-colors">
+            <h3 className="mb-2 text-lg font-semibold leading-tight text-on-surface group-hover:text-primary transition-colors">
                 {title}
             </h3>
-            <p className="mb-4 text-sm text-zinc-400 line-clamp-3">
+            <p className="mb-4 text-sm text-on-surface-variant line-clamp-3">
                 {summary}
             </p>
 
             {/* Footer / Actions */}
-            <div className="flex items-center justify-end border-t border-white/5 pt-4">
+            <div className="flex items-center justify-end border-t border-outline-variant pt-4">
                 <button
                     onClick={onDraft}
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 active:scale-95 group/btn"
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary transition-colors hover:bg-primary/90 active:scale-95 group/btn"
                 >
                     <Sparkles size={16} />
                     <span>Draft Post</span>

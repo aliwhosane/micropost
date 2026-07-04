@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Volume2, Download, Video } from "lucide-react";
+import { toast } from "sonner";
 import { Player } from "@remotion/player";
 import { ShortsComposition } from "@/remotion/Composition";
 
@@ -61,7 +62,7 @@ export function VideoPreview({
                                     setRenderUrl(statusRes.url);
                                 } else {
                                     console.error("Render done but no URL found");
-                                    alert("Render completed but video URL is missing.");
+                                    toast.error("Render completed but video URL is missing.");
                                 }
                             } else if (statusRes.status === "rendering" || !statusRes.done) {
                                 // Remotion sometimes returns status="rendering" or just done=false
@@ -70,7 +71,7 @@ export function VideoPreview({
                                 clearInterval(interval);
                                 setRenderStatus("ERROR");
                                 console.error("Render failed:", statusRes.error);
-                                alert(`Render failed: ${statusRes.error}`);
+                                toast.error(`Render failed: ${statusRes.error}`);
                             }
                         } else {
                             // Network or server action error
@@ -86,12 +87,12 @@ export function VideoPreview({
                 }, 15000);
             } else {
                 setRenderStatus("ERROR");
-                alert("Failed to start render");
+                toast.error("Failed to start render");
             }
         } catch (e) {
             console.error("Render trigger error:", e);
             setRenderStatus("ERROR");
-            alert("Failed to trigger render");
+            toast.error("Failed to trigger render");
         }
     };
 

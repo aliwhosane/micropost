@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { analyzeSocialStyleAction } from "@/lib/actions";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 interface AnalyzeButtonProps {
     platform: "TWITTER";
@@ -24,7 +25,7 @@ export function AnalyzeButton({ platform, isConnected, onAnalysisComplete }: Ana
                 onAnalysisComplete?.();
             } catch (error) {
                 console.error(error);
-                alert("Failed to analyze style. Make sure you have enough recent original tweets (no replies).");
+                toast.error("Failed to analyze style. Make sure you have enough recent original tweets (no replies).");
             }
         });
     };

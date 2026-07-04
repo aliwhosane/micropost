@@ -49,27 +49,27 @@ export function VisionSelector({ postContent, platform, onImageSelect }: VisionS
     };
 
     return (
-        <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 relative">
+        <div className="space-y-4 rounded-xl border border-outline-variant bg-surface-variant/50 p-6 relative">
             <div className="flex items-center gap-2 mb-4">
                 <Wand2 className="text-purple-400" size={20} />
-                <h3 className="text-lg font-semibold text-white">VisionCraft</h3>
-                <span className="text-xs text-zinc-400 bg-white/5 px-2 py-1 rounded-full">Auto-Visuals</span>
+                <h3 className="text-lg font-semibold text-on-surface">VisionCraft</h3>
+                <span className="text-xs text-on-surface-variant bg-surface-variant px-2 py-1 rounded-full">Auto-Visuals</span>
             </div>
 
             {/* Note Editor Overlay */}
             {isEditingNote && (
-                <div className="absolute inset-0 z-50 bg-zinc-900/95 backdrop-blur-sm rounded-xl p-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute inset-0 z-50 bg-surface/95 backdrop-blur-sm rounded-xl p-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex items-center justify-between">
-                        <h4 className="text-white font-medium flex items-center gap-2">
+                        <h4 className="text-on-surface font-medium flex items-center gap-2">
                             <StickyNote size={16} />
                             Customize Note
                         </h4>
-                        <button onClick={() => setIsEditingNote(false)} className="text-zinc-400 hover:text-white">✕</button>
+                        <button onClick={() => setIsEditingNote(false)} className="text-on-surface-variant hover:text-on-surface">✕</button>
                     </div>
                     <textarea
                         value={noteText}
                         onChange={(e) => setNoteText(e.target.value)}
-                        className="flex-1 bg-black/40 border border-white/10 rounded-lg p-3 text-white text-sm resize-none focus:outline-none focus:border-purple-500/50"
+                        className="flex-1 bg-surface-variant border border-outline-variant rounded-lg p-3 text-on-surface text-sm resize-none focus:outline-none focus:border-primary/50"
                         placeholder="Write your note..."
                     />
                     <div className="flex justify-end gap-2">
@@ -135,13 +135,13 @@ export function VisionSelector({ postContent, platform, onImageSelect }: VisionS
 
 function Card({ title, icon: Icon, desc, image, loading, onClick, onSelect, hasEdit, onEdit }: any) {
     return (
-        <div className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/20 transition-all hover:border-white/20">
+        <div className="group relative flex flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface-variant/30 transition-all hover:border-outline">
             {image ? (
                 <div className="relative aspect-video w-full overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image} alt={title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                     <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button size="sm" onClick={onSelect} className="bg-white text-black hover:bg-zinc-200 h-8 text-xs">
+                        <Button size="sm" onClick={onSelect} className="bg-inverse-surface text-inverse-on-surface hover:bg-inverse-surface/80 h-8 text-xs">
                             Use
                         </Button>
                         {hasEdit && (
@@ -154,7 +154,7 @@ function Card({ title, icon: Icon, desc, image, loading, onClick, onSelect, hasE
             ) : (
                 <div
                     onClick={onClick}
-                    className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 text-zinc-500 transition-colors hover:bg-white/5 hover:text-zinc-300"
+                    className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 text-on-surface-variant transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
                     {loading ? <Loader2 className="animate-spin" /> : <Icon size={24} />}
                     <span className="text-xs font-medium">Generate</span>
@@ -162,11 +162,11 @@ function Card({ title, icon: Icon, desc, image, loading, onClick, onSelect, hasE
             )}
 
             <div className="p-3">
-                <div className="flex items-center gap-2 font-medium text-white text-sm">
-                    <Icon size={14} className="text-zinc-400" />
+                <div className="flex items-center gap-2 font-medium text-on-surface text-sm">
+                    <Icon size={14} className="text-on-surface-variant" />
                     {title}
                 </div>
-                <p className="text-[10px] text-zinc-500">{desc}</p>
+                <p className="text-[10px] text-on-surface-variant">{desc}</p>
             </div>
         </div>
     );

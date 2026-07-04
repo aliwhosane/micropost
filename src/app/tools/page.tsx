@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Zap, Send, Heart, Maximize2, Layers, Magnet, UserCog, Eraser, Wand2, Languages, MessageCircle, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, Eye, Sparkles, Target, Youtube, User, Users, Zap, Send, Heart, Maximize2, Layers, Magnet, UserCog, Eraser, Wand2, Languages, MessageCircle, Image as ImageIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -45,6 +45,27 @@ export default function ToolsPage() {
                         </CardContent>
                     </Card>
                 </Link>
+
+                {/* Tool 0.5: Follower Topics */}
+                <Link href="/tools/follower-topics-to-post" className="group">
+                    <Card className="h-full border-outline-variant/40 bg-surface hover:border-cyan-500/50 transition-all hover:shadow-lg hover:shadow-cyan-500/5">
+                        <CardHeader>
+                            <div className="h-12 w-12 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-600 mb-4 group-hover:scale-110 transition-transform">
+                                <Users className="h-6 w-6" />
+                            </div>
+                            <CardTitle className="text-2xl group-hover:text-cyan-600 transition-colors">Follower Topics to Post</CardTitle>
+                            <CardDescription>
+                                Analyze your timeline and generate a post based on what people are actually talking about right now.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button variant="text" className="pl-0 group-hover:text-cyan-600">
+                                Analyze Timeline <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </Link>
+
                 {/* Tool 1: LinkedIn Previewer */}
                 <Link href="/tools/linkedin-previewer" className="group">
                     <Card className="h-full border-outline-variant/40 bg-surface hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5">
